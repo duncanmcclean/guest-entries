@@ -1,0 +1,47 @@
+{
+    "name": "composer-name",
+    "description": "addon-description",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "DummyVendorNamespace\\DummyAddonNamespace\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DummyVendorNamespace\\DummyAddonNamespace\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "addon-name",
+            "description": "addon-description"
+        },
+        "laravel": {
+            "providers": [
+                "DummyVendorNamespace\\DummyAddonNamespace\\ServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "statamic/cms": "^3.0 || ^3.1"
+    },
+    "require-dev": {
+        "nunomaduro/collision": "^4.2",
+        "orchestra/testbench": "^4.0|^5.0|^6.0"
+    },
+    "scripts": {
+        "lint": [
+            "php-cs-fixer fix ./src"
+        ],
+        "test": [
+            "php -d memory_limit=-1 -d max_execution_time=0 ./vendor/bin/phpunit"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
