@@ -3,6 +3,7 @@
 namespace DoubleThreeDigital\GuestEntries\Tests\Http\Controllers;
 
 use DoubleThreeDigital\GuestEntries\Tests\TestCase;
+use Illuminate\Foundation\Http\FormRequest;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 
@@ -37,6 +38,22 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->collectionHandle(), 'comments');
         $this->assertSame($entry->get('title'), 'This is great');
         $this->assertSame($entry->slug(), 'this-is-great');
+    }
+
+    /** @test */
+    public function can_store_entry_with_custom_form_request()
+    {
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                '_request' => FirstCustomStoreRequest::class,
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('description');
     }
 
     /** @test */
@@ -88,6 +105,32 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->get('title'), 'Allo Mate!');
         $this->assertSame($entry->get('record_label'), 'Unknown');
         $this->assertSame($entry->slug(), 'allo-mate');
+    }
+
+    /** @test */
+    public function can_update_entry_with_custom_form_request()
+    {
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                '_request' => FirstCustomUpdateRequest::class,
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('record_label');
     }
 
     /** @test */
@@ -171,5 +214,25 @@ class GuestEntryControllerTest extends TestCase
         $entry = Entry::find('arg');
 
         $this->assertNotNull($entry);
+    }
+}
+
+class FirstCustomStoreRequest extends FormRequest
+{
+    public function rules()
+    {
+        return [
+            'description' => ['required', 'string'],
+        ];
+    }
+}
+
+class FirstCustomUpdateRequest extends FormRequest
+{
+    public function rules()
+    {
+        return [
+            'record_label' => ['required', 'string', 'max:2'],
+        ];
     }
 }

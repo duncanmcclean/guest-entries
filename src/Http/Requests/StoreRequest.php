@@ -7,7 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends FormRequest
 {
-    use Concerns\WhitelistedCollections;
+    use Concerns\AcceptsFormRequests,
+        Concerns\WhitelistedCollections;
 
     public function authorize()
     {
@@ -16,7 +17,7 @@ class StoreRequest extends FormRequest
 
     public function rules()
     {
-        return [
+        $rules = [
             '_collection'     => ['required', 'string',
                 // new CollectionExists
             ],
@@ -24,5 +25,20 @@ class StoreRequest extends FormRequest
             '_error_redirect' => ['nullable', 'string'],
             '_request'        => ['nullable', 'string'],
         ];
+
+        if ($formRequest = $this->get('_request')) {
+            $rules = array_merge($this->buildFormRequest($formRequest, $this)->rules());
+        }
+
+        return $rules;
+    }
+
+    public function messages()
+    {
+        if ($formRequest = $this->get('_request')) {
+            return $this->buildFormRequest($formRequest, $this)->messages();
+        }
+
+        return [];
     }
 }
