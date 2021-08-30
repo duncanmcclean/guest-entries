@@ -41,6 +41,26 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_where_slug_is_generated_from_title()
+    {
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is fantastic',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is fantastic');
+        $this->assertSame($entry->slug(), 'this-is-fantastic');
+    }
+
+    /** @test */
     public function can_store_entry_with_custom_form_request()
     {
         Collection::make('comments')->save();

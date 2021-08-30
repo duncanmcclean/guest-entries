@@ -8,6 +8,7 @@ use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Statamic\Facades\Entry;
 
 class GuestEntryController extends Controller
@@ -21,6 +22,8 @@ class GuestEntryController extends Controller
 
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
+        } else {
+            $entry->slug(Str::slug($request->get('title')));
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
