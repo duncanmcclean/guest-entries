@@ -142,6 +142,4 @@ If you discover a security vulnerability within Guest Entries, please report it 
 <a href="https://packagist.org/packages/doublethreedigital/guest-entries/stats"><img src="https://img.shields.io/packagist/v/doublethreedigital/guest-entries?style=for-the-badge" alt=":addonName on Packagist"></a>
 </p>
 
-Generated using [`doublethreedigital/addon-boilerplate`](https://github.com/doublethreedigital/addon-boilerplate)
-
 <!-- /statamic:hide -->
