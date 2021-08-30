@@ -6,5 +6,11 @@ use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
 {
-    // Do amazing things!
+    protected $routes = [
+        'actions' => __DIR__ . '/../routes/actions.php',
+    ];
+
+    protected $tags = [
+        Tags\GuestEntriesTag::class,
+    ];
 }
