@@ -8,9 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateRequest extends FormRequest
 {
+    use Concerns\WhitelistedCollections;
+
     public function authorize()
     {
-        return true;
+        return $this->collectionIsWhitelisted($this->get('_collection'));
     }
 
     public function rules()
