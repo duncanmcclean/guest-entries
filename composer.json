@@ -1,25 +1,25 @@
 {
-    "name": "composer-name",
-    "description": "addon-description",
+    "name": "doublethreedigital/guest-entries",
+    "description": "Front-end CRUD Operations for your Statamic Entries",
     "license": "proprietary",
     "autoload": {
         "psr-4": {
-            "DummyVendorNamespace\\DummyAddonNamespace\\": "src"
+            "DoubleThreeDigital\\GuestEntries\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "DummyVendorNamespace\\DummyAddonNamespace\\Tests\\": "tests"
+            "DoubleThreeDigital\\GuestEntries\\Tests\\": "tests"
         }
     },
     "extra": {
         "statamic": {
-            "name": "addon-name",
-            "description": "addon-description"
+            "name": "guest-entries",
+            "description": "Front-end CRUD Operations for your Statamic Entries"
         },
         "laravel": {
             "providers": [
-                "DummyVendorNamespace\\DummyAddonNamespace\\ServiceProvider"
+                "DoubleThreeDigital\\GuestEntries\\ServiceProvider"
             ]
         }
     },

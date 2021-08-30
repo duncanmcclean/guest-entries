@@ -1,10 +1,10 @@
 <?php
 
-namespace DummyVendorNamespace\DummyAddonNamespace\Tests;
+namespace DoubleThreeDigital\GuestEntries\Tests;
 
 use Statamic\Extend\Manifest;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
-use DummyVendorNamespace\DummyAddonNamespace\ServiceProvider;
+use DoubleThreeDigital\GuestEntries\ServiceProvider;
 use Statamic\Providers\StatamicServiceProvider;
 use Statamic\Statamic;
 
@@ -30,9 +30,9 @@ abstract class TestCase extends OrchestraTestCase
         parent::getEnvironmentSetUp($app);
 
         $app->make(Manifest::class)->manifest = [
-            'composer-name' => [
-                'id' => 'composer-name',
-                'namespace' => 'DummyVendorNamespace\\DummyAddonNamespace\\',
+            'doublethreedigital/guest-entries' => [
+                'id' => 'doublethreedigital/guest-entries',
+                'namespace' => 'DoubleThreeDigital\\GuestEntries',
             ],
         ];
     }
