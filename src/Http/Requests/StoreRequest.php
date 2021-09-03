@@ -24,6 +24,7 @@ class StoreRequest extends FormRequest
             '_redirect'       => ['nullable', 'string'],
             '_error_redirect' => ['nullable', 'string'],
             '_request'        => ['nullable', 'string'],
+            'slug'            => ['required_without:title'],
         ];
 
         if ($formRequest = $this->get('_request')) {

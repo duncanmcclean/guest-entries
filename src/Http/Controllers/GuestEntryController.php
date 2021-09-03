@@ -87,7 +87,7 @@ class GuestEntryController extends Controller
         }
 
         return $request->_error_redirect
-            ? redirect($request->_error_redirect)->withErrors($errorMessage, 'simple-commerce')
-            : back()->withErrors($errorMessage, 'simple-commerce');
+            ? redirect($request->_error_redirect)->withErrors($errorMessage, 'guest-entries')
+            : back()->withErrors($errorMessage, 'guest-entries');
     }
 }

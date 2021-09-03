@@ -4,6 +4,7 @@ namespace DoubleThreeDigital\GuestEntries\Tests\Http\Controllers;
 
 use DoubleThreeDigital\GuestEntries\Tests\TestCase;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\File;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 
@@ -12,6 +13,8 @@ class GuestEntryControllerTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+
+        File::deleteDirectory(app('stache')->store('entries')->directory());
 
         $this->app['config']->set('guest-entries.collections', [
             'comments' => true,
@@ -91,8 +94,29 @@ class GuestEntryControllerTest extends TestCase
 
         $entry = Entry::all()->last();
 
+        $this->assertNull($entry);
+    }
+
+    /** @test */
+    public function can_store_entry_and_user_is_redirected()
+    {
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                '_redirect' => '/bobs-your-uncle',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect('/bobs-your-uncle');
+
+        $entry = Entry::all()->last();
+
         $this->assertNotNull($entry);
-        $this->assertNotSame($entry->collectionHandle(), 'smth');
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
     }
 
     /** @test */
@@ -184,6 +208,39 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_update_entry_and_user_is_redirected()
+    {
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                '_redirect' => '/good-good-night',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect('/good-good-night');
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+    }
+
+    /** @test */
     public function can_destroy_entry()
     {
         Collection::make('albums')->save();
@@ -234,6 +291,34 @@ class GuestEntryControllerTest extends TestCase
         $entry = Entry::find('arg');
 
         $this->assertNotNull($entry);
+    }
+
+    /** @test */
+    public function can_destroy_entry_if_collection_has_not_been_whitelisted_and_user_is_redirected()
+    {
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->delete(route('statamic.guest-entries.destroy'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                '_redirect' => '/allo-mate',
+            ])
+            ->assertRedirect('/allo-mate');
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNull($entry);
     }
 }
 
