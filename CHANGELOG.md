@@ -2,6 +2,6 @@
 
 ## Unreleased
 
-## v1.0.0 - 2021-xx-xx
+## v1.0.0 (2021-09-03)
 
 - Initial release
