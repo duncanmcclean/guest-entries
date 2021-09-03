@@ -18,6 +18,10 @@ class GuestEntryController extends Controller
 
     public function store(StoreRequest $request)
     {
+        if (! $this->honeypotPassed($request)) {
+            return $this->withSuccess($request);
+        }
+
         $collection = Collection::find($request->get('_collection'));
 
         $entry = Entry::make()
@@ -45,6 +49,10 @@ class GuestEntryController extends Controller
 
     public function update(UpdateRequest $request)
     {
+        if (! $this->honeypotPassed($request)) {
+            return $this->withSuccess($request);
+        }
+
         $entry = Entry::find($request->get('_id'));
 
         if ($request->has('slug')) {
@@ -63,11 +71,26 @@ class GuestEntryController extends Controller
 
     public function destroy(DestroyRequest $request)
     {
+        if (! $this->honeypotPassed($request)) {
+            return $this->withSuccess($request);
+        }
+
         $entry = Entry::find($request->get('_id'));
 
         $entry->delete();
 
         return $this->withSuccess($request);
+    }
+
+    protected function honeypotPassed(Request $request): ?bool
+    {
+        $honeypot = config('guest-entries.honeypot');
+
+        if (! $honeypot) {
+            return true;
+        }
+
+        return empty($request->get($honeypot));
     }
 
     protected function withSuccess(Request $request, array $data = [])

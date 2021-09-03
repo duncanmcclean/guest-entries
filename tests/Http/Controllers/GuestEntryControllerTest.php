@@ -4,6 +4,7 @@ namespace DoubleThreeDigital\GuestEntries\Tests\Http\Controllers;
 
 use DoubleThreeDigital\GuestEntries\Tests\TestCase;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
@@ -189,6 +190,51 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'this-is-great');
 
         $this->assertNotNull($entry->get('date'));
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_honeypot_works_if_value_is_empty()
+    {
+        Config::set('guest-entries.honeypot', 'postcode');
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great2',
+                'postcode' => '',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great2');
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_honeypot_works_if_value_is_not_empty()
+    {
+        Config::set('guest-entries.honeypot', 'postcode');
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great3',
+                'postcode' => 'A12 34B',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNull($entry);
     }
 
     /** @test */

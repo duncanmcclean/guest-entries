@@ -16,4 +16,16 @@ return [
         'pages' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Honeypot
+    |--------------------------------------------------------------------------
+    |
+    | If you'd like to enable the honeypot, specify the name of the input
+    | you'd like to use.
+    |
+    */
+
+    'honeypot' => false,
+
 ];
