@@ -40,10 +40,24 @@ return [
         'pages' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Honeypot
+    |--------------------------------------------------------------------------
+    |
+    | If you'd like to enable the honeypot, specify the name of the input
+    | you'd like to use.
+    |
+    */
+
+    'honeypot' => false,
+
 ];
 ```
 
 To enable a collection, create an entry in the array, where the key is the handle of the collection and where the value is `true`/`false`, depending on if you wish to enable/disable it.
+
+You may also configure this addon's [Honeypot](#honeypot) feature. `false` will mean the feature is disabled. To enable, you may change this to a field name that will never be entered by a human (as it'll be hidden) but may be auto-filled by a robot.
 
 ### Tags
 
@@ -111,6 +125,25 @@ You may specify a Laravel Form Request to be used for validation of the form. Yo
 #### Variables
 
 If you're using the update/delete forms provided by Guest Entries, you will be able to use any of your entries data, in case you wish to fill `value` attributes on the input fields.
+
+### Honeypot
+
+Guest Entries includes a simple Honeypot feature to help reduce spam via your front-end forms. Documentation around configuring can be seen under '[Configuration](#configuration)'.
+
+Once you've enabled the Honeypot, ensure to add the field to your forms, like so:
+
+```antlers
+{{ guest-entries:create collection="articles" }}
+    <h2>Create article</h2>
+
+    <input type="text" name="title">
+    <textarea name="content"></textarea>
+
+    <input type="hidden" name="zip_code" value=""> <!-- This is my honeypot -->
+
+    <button type="submit">Create</button>
+{{ /guest-entries:create }}
+```
 
 ## Security
 
