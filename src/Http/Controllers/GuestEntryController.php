@@ -31,6 +31,7 @@ class GuestEntryController extends Controller
         }
 
         $entry->save();
+        $entry->touch();
 
         return $this->withSuccess($request);
     }
@@ -48,6 +49,7 @@ class GuestEntryController extends Controller
         }
 
         $entry->save();
+        $entry->touch();
 
         return $this->withSuccess($request);
     }
