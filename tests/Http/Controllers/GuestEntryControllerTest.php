@@ -169,6 +169,29 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_where_collection_is_date_ordered_and_ensure_date_is_saved()
+    {
+        Collection::make('comments')->dated(true)->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertNotNull($entry->get('date'));
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();

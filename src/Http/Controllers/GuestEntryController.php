@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 
 class GuestEntryController extends Controller
@@ -17,8 +18,10 @@ class GuestEntryController extends Controller
 
     public function store(StoreRequest $request)
     {
+        $collection = Collection::find($request->get('_collection'));
+
         $entry = Entry::make()
-            ->collection($request->get('_collection'));
+            ->collection($collection->handle());
 
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
@@ -28,6 +31,10 @@ class GuestEntryController extends Controller
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
             $entry->set($key, $value);
+        }
+
+        if ($collection->dated() && ! $entry->has('date')) {
+            $entry->set('date', now()->timestamp);
         }
 
         $entry->save();
