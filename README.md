@@ -114,14 +114,6 @@ You may specify a Laravel Form Request to be used for validation of the form. Yo
 
 If you're using the update/delete forms provided by Guest Entries, you will be able to use any of your entries data, in case you wish to fill `value` attributes on the input fields.
 
-### Errors
-
-### File Uploads
-
-### AJAX
-
-### Troubleshooting
-
 ## Security
 
 From a security perspective, only the latest version will receive a security release if a vulnerability is found.
