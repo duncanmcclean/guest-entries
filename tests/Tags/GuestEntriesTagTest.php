@@ -263,6 +263,44 @@ class GuestEntriesTagTest extends TestCase
     }
 
     /** @test */
+    public function can_return_update_guest_entry_form_and_entry_values_can_be_used()
+    {
+        Collection::make('guestbook')->save();
+
+        Entry::make()
+            ->collection('guestbook')
+            ->id('hello')
+            ->slug('hello')
+            ->data(['title' => 'Hello World', 'comment' => 'Something can go here'])
+            ->save();
+
+        $this->tag->setParameters([
+            'collection' => 'guestbook',
+            'id' => 'hello',
+        ]);
+
+        $this->tag->setContent('
+            <h2>Update Guestbook Entry: {{ title }}</h2>
+
+            <input name="name">
+            <input name="email">
+            <textarea name="comment">Something can go here</textarea>
+
+            <button type="submit">Submit</button>
+        ');
+
+        $usage = $this->tag->update();
+
+        $this->assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+
+        $this->assertStringContainsString('<h2>Update Guestbook Entry: Hello World</h2>', $usage);
+        $this->assertStringContainsString('<textarea name="comment">Something can go here</textarea>', $usage);
+    }
+
+    /** @test */
     public function can_return_delete_guest_entry_form()
     {
         Collection::make('guestbook')->save();
@@ -404,5 +442,39 @@ class GuestEntriesTagTest extends TestCase
         ');
 
         $usage = $this->tag->delete();
+    }
+
+    /** @test */
+    public function can_return_delete_guest_entry_form_and_entry_values_can_be_used()
+    {
+        Collection::make('guestbook')->save();
+
+        Entry::make()
+            ->collection('guestbook')
+            ->id('hello')
+            ->slug('hello')
+            ->data(['title' => 'Hello World'])
+            ->save();
+
+        $this->tag->setParameters([
+            'collection' => 'guestbook',
+            'id' => 'hello',
+        ]);
+
+        $this->tag->setContent('
+            <h2>Delete Guestbook Entry: {{ title }}</h2>
+
+            <button type="submit">DELETE</button>
+        ');
+
+        $usage = $this->tag->delete();
+
+        $this->assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+
+        $this->assertStringContainsString('<h2>Delete Guestbook Entry: Hello World</h2>', $usage);
+        $this->assertStringContainsString('<button type="submit">DELETE</button>', $usage);
     }
 }

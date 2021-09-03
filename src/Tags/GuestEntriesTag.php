@@ -51,7 +51,7 @@ class GuestEntriesTag extends Tags
             throw new EntryNotFoundException();
         }
 
-        return $this->createForm(route('statamic.guest-entries.update'));
+        return $this->createForm(route('statamic.guest-entries.update'), Entry::find($entryId)->toAugmentedArray());
     }
 
     public function delete()
@@ -75,6 +75,6 @@ class GuestEntriesTag extends Tags
             throw new EntryNotFoundException();
         }
 
-        return $this->createForm(route('statamic.guest-entries.destroy'), [], 'DELETE');
+        return $this->createForm(route('statamic.guest-entries.destroy'), Entry::find($entryId)->toAugmentedArray(), 'DELETE');
     }
 }
