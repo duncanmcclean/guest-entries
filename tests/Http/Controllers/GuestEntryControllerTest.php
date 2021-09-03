@@ -120,6 +120,33 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_and_ensure_ignored_parameters_are_not_saved()
+    {
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                '_redirect' => '/whatever',
+                '_error_redirect' => '/whatever-else',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertNull($entry->get('_collection'));
+        $this->assertNull($entry->get('_redirect'));
+        $this->assertNull($entry->get('_error_redirect'));
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();
@@ -238,6 +265,45 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->get('title'), 'Allo Mate!');
         $this->assertSame($entry->get('record_label'), 'Unknown');
         $this->assertSame($entry->slug(), 'allo-mate');
+    }
+
+    /** @test */
+    public function can_update_entry_and_ensure_required_parameters_are_not_saved()
+    {
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                '_redirect' => '/something',
+                '_error_redirect' => '/something-else',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertNull($entry->get('_collection'));
+        $this->assertNull($entry->get('_id'));
+        $this->assertNull($entry->get('_redirect'));
+        $this->assertNull($entry->get('_error_redirect'));
     }
 
     /** @test */
