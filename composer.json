@@ -1,6 +1,6 @@
 {
     "name": "doublethreedigital/guest-entries",
-    "description": "Perform CRUD operations in the front-end of your site",
+    "description": "Perform CRUD operations in the front-end of your site.",
     "license": "proprietary",
     "autoload": {
         "psr-4": {
@@ -15,7 +15,7 @@
     "extra": {
         "statamic": {
             "name": "Guest Entries",
-            "description": "Perform CRUD operations in the front-end of your site"
+            "description": "Perform CRUD operations in the front-end of your site."
         },
         "laravel": {
             "providers": [
