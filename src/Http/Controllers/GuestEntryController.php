@@ -14,7 +14,7 @@ use Statamic\Facades\Entry;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug'];
+    protected $ignoredParameters = ['_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
 
     public function store(StoreRequest $request)
     {
@@ -25,12 +25,17 @@ class GuestEntryController extends Controller
         $collection = Collection::find($request->get('_collection'));
 
         $entry = Entry::make()
-            ->collection($collection->handle());
+            ->collection($collection->handle())
+            ->published(false);
 
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
         } else {
             $entry->slug(Str::slug($request->get('title')));
+        }
+
+        if ($request->has('published')) {
+            $entry->published($request->get('published') == '1' || $request->get('published') == 'true' ? true : false);
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
@@ -57,6 +62,10 @@ class GuestEntryController extends Controller
 
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
+        }
+
+        if ($request->has('published')) {
+            $entry->published($request->get('published') == 1 || $request->get('published') == 'true' ? true : false);
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
