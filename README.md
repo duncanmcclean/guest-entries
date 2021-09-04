@@ -126,6 +126,15 @@ You may specify a Laravel Form Request to be used for validation of the form. Yo
 
 If you're using the update/delete forms provided by Guest Entries, you will be able to use any of your entries data, in case you wish to fill `value` attributes on the input fields.
 
+```antlers
+{{ guest-entries:update collection="articles" id="article-id" }}
+    <h2>Edit article: {{ title }}</h2>
+    <p>Last updated: {{ updated_at }}</p>
+
+    ...
+{{ /guest-entries:update }}
+```
+
 ### Honeypot
 
 Guest Entries includes a simple Honeypot feature to help reduce spam via your front-end forms. Documentation around configuring can be seen under '[Configuration](#configuration)'.
