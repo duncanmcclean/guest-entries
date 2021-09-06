@@ -77,4 +77,24 @@ class GuestEntriesTag extends Tags
 
         return $this->createForm(route('statamic.guest-entries.destroy'), Entry::find($entryId)->data()->toArray(), 'DELETE');
     }
+
+    public function errors()
+    {
+        if (! $this->hasErrors()) {
+            return null;
+        }
+
+        $errors = [];
+
+        foreach (session('errors')->getBag('default')->all() as $error) {
+            $errors[]['value'] = $error;
+        }
+
+        return $this->parseLoop($errors);
+    }
+
+    public function hasErrors()
+    {
+        return session()->has('errors');
+    }
 }

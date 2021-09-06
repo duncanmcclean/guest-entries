@@ -154,6 +154,16 @@ Once you've enabled the Honeypot, ensure to add the field to your forms, like so
 {{ /guest-entries:create }}
 ```
 
+### Errors
+
+If you'd like to show any errors after a user has submitted the Guest Entries form, you can use the `{{ guest-entries:errors }}` tag, like shown below:
+
+```antlers
+{{ guest-entries:errors }}
+    <li>{{ value }}</li>
+{{ /guest-entries:errors }}
+```
+
 ### Events
 
 If you need to trigger any custom code when a user does anything with Guest Entries, this addon provides some addons to let you do that.
