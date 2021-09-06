@@ -2,6 +2,9 @@
 
 namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
 
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
 use DoubleThreeDigital\GuestEntries\Http\Requests\DestroyRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\StoreRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
@@ -49,6 +52,8 @@ class GuestEntryController extends Controller
         $entry->save();
         $entry->touch();
 
+        event(new GuestEntryCreated($entry));
+
         return $this->withSuccess($request);
     }
 
@@ -75,6 +80,8 @@ class GuestEntryController extends Controller
         $entry->save();
         $entry->touch();
 
+        event(new GuestEntryUpdated($entry));
+
         return $this->withSuccess($request);
     }
 
@@ -87,6 +94,8 @@ class GuestEntryController extends Controller
         $entry = Entry::find($request->get('_id'));
 
         $entry->delete();
+
+        event(new GuestEntryDeleted($entry));
 
         return $this->withSuccess($request);
     }

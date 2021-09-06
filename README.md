@@ -154,6 +154,49 @@ Once you've enabled the Honeypot, ensure to add the field to your forms, like so
 {{ /guest-entries:create }}
 ```
 
+### Events
+
+If you need to trigger any custom code when a user does anything with Guest Entries, this addon provides some addons to let you do that.
+
+#### GuestEntryCreated
+
+[`DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated`](https://github.com/doublethreedigital/guest-entries/blob/main/src/Events/GuestEntryCreated.php)
+
+This event is fired whenever an entry is created via `{{ guest-entries:create }}`.
+
+```php
+public function handle(GuestEntryCreated $event)
+{
+	$event->entry;
+}
+```
+
+#### GuestEntryUpdated
+
+[`DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated`](https://github.com/doublethreedigital/guest-entries/blob/main/src/Events/GuestEntryUpdated.php)
+
+This event is fired whenever an entry is updated via `{{ guest-entries:update }}`.
+
+```php
+public function handle(GuestEntryUpdated $event)
+{
+	$event->entry;
+}
+```
+
+#### GuestEntryDeleted
+
+[`DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted`](https://github.com/doublethreedigital/guest-entries/blob/main/src/Events/GuestEntryDeleted.php)
+
+This event is fired whenever an entry is updated via `{{ guest-entries:delete }}`.
+
+```php
+public function handle(GuestEntryDeleted $event)
+{
+	$event->entry;
+}
+```
+
 ## Security
 
 From a security perspective, only the latest version will receive a security release if a vulnerability is found.
