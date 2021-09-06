@@ -2,9 +2,13 @@
 
 namespace DoubleThreeDigital\GuestEntries\Tests\Http\Controllers;
 
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
+use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
 use DoubleThreeDigital\GuestEntries\Tests\TestCase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
@@ -283,6 +287,31 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_and_ensure_events_and_dispatched()
+    {
+        Event::fake();
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        Event::assertDispatchedTimes(GuestEntryCreated::class, 1);
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();
@@ -513,6 +542,42 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_update_entry_and_ensure_events_are_dispatched()
+    {
+        Event::fake();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        Event::assertDispatchedTimes(GuestEntryUpdated::class, 1);
+    }
+
+    /** @test */
     public function can_destroy_entry()
     {
         Collection::make('albums')->save();
@@ -591,6 +656,37 @@ class GuestEntryControllerTest extends TestCase
         $entry = Entry::find('allo-mate-idee');
 
         $this->assertNull($entry);
+    }
+
+    /** @test */
+    public function can_destroy_entry_and_ensure_events_are_dispatched()
+    {
+        Event::fake();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->delete(route('statamic.guest-entries.destroy'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNull($entry);
+
+        Event::assertDispatchedTimes(GuestEntryDeleted::class, 1);
     }
 }
 
