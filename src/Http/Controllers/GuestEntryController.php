@@ -17,7 +17,7 @@ use Statamic\Facades\Entry;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
+    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
 
     public function store(StoreRequest $request)
     {
