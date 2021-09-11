@@ -712,6 +712,95 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_update_entry_and_ensure_file_can_be_uploaded()
+    {
+        AssetContainer::make('assets')->disk('local')->save();
+
+        Blueprint::make('albums')
+            ->setNamespace('collections.albums')
+            ->setContents([
+                'title' => 'Albums',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'artist',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'record_label',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'attachment',
+                                'field' => [
+                                    'mode' => 'list',
+                                    'container' => 'assets',
+                                    'restrict' => false,
+                                    'allow_uploads' => true,
+                                    'show_filename' => true,
+                                    'display' => 'Attachment',
+                                    'type' => 'assets',
+                                    'icon' => 'assets',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+                'attachment' => UploadedFile::fake()->image('something.jpg'),
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertNotNull($entry->get('attachment'));
+    }
+
+    /** @test */
     public function can_destroy_entry()
     {
         Collection::make('albums')->save();
