@@ -2,6 +2,7 @@
 
 namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
 
+use Carbon\Carbon;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
@@ -17,7 +18,7 @@ use Statamic\Facades\Entry;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
+    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published', 'date'];
 
     public function store(StoreRequest $request)
     {
@@ -45,8 +46,8 @@ class GuestEntryController extends Controller
             $entry->set($key, $value);
         }
 
-        if ($collection->dated() && ! $entry->has('date')) {
-            $entry->set('date', now()->timestamp);
+        if ($collection->dated()) {
+            $entry->date($request->get('date') ?? now());
         }
 
         $entry->save();
@@ -75,6 +76,10 @@ class GuestEntryController extends Controller
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
             $entry->set($key, $value);
+        }
+
+        if ($entry->collection()->dated() && $request->has('date')) {
+            $entry->date($request->get('date'));
         }
 
         $entry->save();
