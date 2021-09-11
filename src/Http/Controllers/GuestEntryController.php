@@ -2,19 +2,23 @@
 
 namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
 
-use Carbon\Carbon;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
+use DoubleThreeDigital\GuestEntries\Exceptions\AssetContainerNotFoundSpecified;
 use DoubleThreeDigital\GuestEntries\Http\Requests\DestroyRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\StoreRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
+use Statamic\Fields\Field;
+use Statamic\Fieldtypes\Assets\Assets;
 
 class GuestEntryController extends Controller
 {
@@ -43,6 +47,13 @@ class GuestEntryController extends Controller
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
+            /** @var \Statamic\Fields\Field $blueprintField */
+            $field = $collection->entryBlueprint()->field($key);
+
+            if ($field && $field->fieldtype() instanceof Assets) {
+                $value = $this->uploadFile($key, $field, $request);
+            }
+
             $entry->set($key, $value);
         }
 
@@ -64,6 +75,7 @@ class GuestEntryController extends Controller
             return $this->withSuccess($request);
         }
 
+        /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::find($request->get('_id'));
 
         if ($request->has('slug')) {
@@ -75,6 +87,13 @@ class GuestEntryController extends Controller
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
+            /** @var \Statamic\Fields\Field $blueprintField */
+            $field = $entry->blueprint()->field($key);
+
+            if ($field && $field->fieldtype() instanceof Assets) {
+                $value = $this->uploadFile($key, $field, $request);
+            }
+
             $entry->set($key, $value);
         }
 
@@ -103,6 +122,30 @@ class GuestEntryController extends Controller
         event(new GuestEntryDeleted($entry));
 
         return $this->withSuccess($request);
+    }
+
+    protected function uploadFile(string $key, Field $field, Request $request)
+    {
+        if (! isset($field->config()['container'])) {
+            throw new AssetContainerNotFoundSpecified("Please specify an asset container on your [{$key}] field, in order for file uploads to work.");
+        }
+
+        /** @var \Statamic\Assets\AssetContainer $assetContainer */
+        $assetContainer = AssetContainer::findByHandle($field->config()['container']);
+
+        $path = '/' . $request->file($key)
+            ->store(
+                isset($field->config()['folder'])
+                    ? $assetContainer->diskPath() . '/' . $field->config()['folder']
+                    : $assetContainer->diskPath(),
+                $assetContainer->diskHandle()
+            );
+
+        if (isset($field->config()['max_items']) && $field->config()['max_items'] > 1) {
+            return [str_replace($assetContainer->diskPath(), '', $path)];
+        }
+
+        return str_replace($assetContainer->diskPath(), '', $path);
     }
 
     protected function honeypotPassed(Request $request): ?bool
