@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v1.0.3 (2021-09-11)
+
+### What's new
+
+* File Uploads #1
+
+### What's fixed
+
+* The CSRF token is no longer saved as data on entries
+* Publish Dates are now saved correctly if you're using a dated collection (and you provide a date) #6
+
 ## v1.0.2 (2021-09-06)
 
 ### What's new
