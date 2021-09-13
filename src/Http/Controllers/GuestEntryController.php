@@ -31,6 +31,7 @@ class GuestEntryController extends Controller
 
         $collection = Collection::find($request->get('_collection'));
 
+        /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::make()
             ->collection($collection->handle())
             ->published(false);
@@ -77,6 +78,9 @@ class GuestEntryController extends Controller
         /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::find($request->get('_id'));
 
+        /** @var array $data */
+        $data = $entry->data()->toArray();
+
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
         }
@@ -93,15 +97,44 @@ class GuestEntryController extends Controller
                 $value = $this->uploadFile($key, $field, $request);
             }
 
-            $entry->set($key, $value);
+            $data[$key] = $value;
         }
 
-        if ($entry->collection()->dated() && $request->has('date')) {
-            $entry->date($request->get('date'));
-        }
+        if ($entry->revisionsEnabled()) {
+            /** @var \Statamic\Revisions\Revision $revision */
+            $revision = $entry->makeWorkingCopy();
+            $revision->id($entry->id());
 
-        $entry->save();
-        $entry->touch();
+            $revision->attributes([
+                'title' => $entry->get('title'),
+                'slug' => $entry->slug(),
+                'published' => $entry->published(),
+                'data' => $data,
+            ]);
+
+            if ($entry->collection()->dated() && $request->has('date')) {
+                $revision->date($request->get('date'));
+            }
+
+            if ($request->user()) {
+                $revision->user($revision->user());
+            }
+
+            $revision->message(__('Guest Entry Updated'));
+            $revision->action('revision');
+
+            $revision->save();
+            $entry->save();
+        } else {
+            $entry->data($data);
+
+            if ($entry->collection()->dated() && $request->has('date')) {
+                $entry->date($request->get('date'));
+            }
+
+            $entry->save();
+            $entry->touch();
+        }
 
         event(new GuestEntryUpdated($entry));
 

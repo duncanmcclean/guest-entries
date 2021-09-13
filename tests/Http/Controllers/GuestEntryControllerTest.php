@@ -801,6 +801,54 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_update_entry_with_revisions_enabled()
+    {
+        Config::set('statamic.editions.pro', true);
+        Config::set('statamic.revisions.enabled', true);
+
+        Collection::make('albums')->revisionsEnabled(true)->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+        $workingCopy = $entry->workingCopy();
+
+        $this->assertNotNull($entry);
+        $this->assertTrue($entry->revisionsEnabled());
+        $this->assertTrue($entry->hasWorkingCopy());
+        $this->assertSame($entry->collectionHandle(), 'albums');
+
+        $this->assertSame($workingCopy->message(), 'Guest Entry Updated');
+        $this->assertSame($workingCopy->action(), 'revision');
+        $this->assertSame($workingCopy->attributes(), [
+            'title' => 'Allo Mate!',
+            'slug' => 'allo-mate',
+            'published' => true,
+            'data' => [
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+                'record_label' => 'Unknown',
+            ],
+        ]);
+    }
+
+    /** @test */
     public function can_destroy_entry()
     {
         Collection::make('albums')->save();
