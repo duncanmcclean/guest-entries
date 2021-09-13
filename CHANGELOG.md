@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.0.4 (2021-09-13)
+
+### What's new
+
+* A 'working copy' revision will be created on entry update if collection has revisions enabled. #4
+
 ## v1.0.3 (2021-09-11)
 
 ### What's new
