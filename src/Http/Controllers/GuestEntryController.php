@@ -10,7 +10,6 @@ use DoubleThreeDigital\GuestEntries\Http\Requests\DestroyRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\StoreRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
