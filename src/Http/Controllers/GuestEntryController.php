@@ -168,7 +168,7 @@ class GuestEntryController extends Controller
         $path = '/' . $request->file($key)
             ->store(
                 isset($field->config()['folder'])
-                    ? $assetContainer->diskPath() . '/' . $field->config()['folder']
+                    ? $field->config()['folder']
                     : $assetContainer->diskPath(),
                 $assetContainer->diskHandle()
             );
