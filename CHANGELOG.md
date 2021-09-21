@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.0.5 (2021-09-21)
+
+### What's fixed
+
+* Possibly fixed the file uploads issue experienced in #9
+
 ## v1.0.4 (2021-09-13)
 
 ### What's new
