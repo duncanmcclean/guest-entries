@@ -165,19 +165,34 @@ class GuestEntryController extends Controller
         /** @var \Statamic\Assets\AssetContainer $assetContainer */
         $assetContainer = AssetContainer::findByHandle($field->config()['container']);
 
-        $path = '/' . $request->file($key)
-            ->store(
+        $files = [];
+        $uploadedFiles = $request->file($key);
+
+        if (! is_array($uploadedFiles)) {
+            $uploadedFiles = [$uploadedFiles];
+        }
+
+        /** @var \Illuminate\Http\Testing\File $file */
+        foreach ($uploadedFiles as $uploadedFile) {
+            $path = '/' . $uploadedFile->store(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']
                     : $assetContainer->diskPath(),
                 $assetContainer->diskHandle()
             );
 
-        if (isset($field->config()['max_items']) && $field->config()['max_items'] > 1) {
-            return [str_replace($assetContainer->diskPath(), '', $path)];
+            $files[] = str_replace($assetContainer->diskPath(), '', $path);
         }
 
-        return str_replace($assetContainer->diskPath(), '', $path);
+        if (count($files) === 0) {
+            return null;
+        }
+
+        if (count($files) === 1) {
+            return $files[0];
+        }
+
+        return $files;
     }
 
     protected function honeypotPassed(Request $request): ?bool

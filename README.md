@@ -222,9 +222,23 @@ Then in your Guest Entries form, add `files="true"` as a parameter to the form a
     <input type="text" name="title">
     <textarea name="content"></textarea>
 
-    <input type="file" name="attachment">
+    <input type="file" name="attachment[]">
 
     <button type="submit">Create</button>
+{{ /guest-entries:create }}
+```
+
+If you need to upload multiple files, just use multiple inputs, like so:
+
+```antlers
+{{ guest-entries:create collection="articles" files="true" }}
+    <!-- ... -->
+
+    <input type="file" name="attachment[]">
+    <input type="file" name="attachment[]">
+    <input type="file" name="attachment[]">
+
+    <!-- ... -->
 {{ /guest-entries:create }}
 ```
 

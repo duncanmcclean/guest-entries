@@ -378,6 +378,7 @@ class GuestEntryControllerTest extends TestCase
                                     'type' => 'assets',
                                     'icon' => 'assets',
                                     'listable' => 'hidden',
+                                    'max_items' => 1,
                                 ],
                             ],
                         ],
@@ -407,7 +408,80 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'this-is-great');
 
         $this->assertNotNull($entry->get('attachment'));
-        // $this->assertFileExists(AssetContainer::find('assets')->diskPath() . $entry->get('attachment'));
+        $this->assertIsString($entry->get('attachment'));
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_multiple_files_can_be_uploaded()
+    {
+        AssetContainer::make('assets')->disk('local')->save();
+
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'attachments',
+                                'field' => [
+                                    'mode' => 'list',
+                                    'container' => 'assets',
+                                    'restrict' => false,
+                                    'allow_uploads' => true,
+                                    'show_filename' => true,
+                                    'display' => 'Attachment',
+                                    'type' => 'assets',
+                                    'icon' => 'assets',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->save();
+
+        $this->withoutExceptionHandling();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'attachments' => [
+                    UploadedFile::fake()->create('foobar.png'),
+                    UploadedFile::fake()->create('barfoo.jpg'),
+                ],
+        ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertNotNull($entry->get('attachments'));
+        $this->assertIsArray($entry->get('attachments'));
+        $this->assertSame(count($entry->get('attachments')), 2);
     }
 
     /** @test */
@@ -760,6 +834,7 @@ class GuestEntryControllerTest extends TestCase
                                     'type' => 'assets',
                                     'icon' => 'assets',
                                     'listable' => 'hidden',
+                                    'max_items' => 1,
                                 ],
                             ],
                         ],
@@ -798,6 +873,101 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'allo-mate');
 
         $this->assertNotNull($entry->get('attachment'));
+        $this->assertIsString($entry->get('attachment'));
+    }
+
+    /** @test */
+    public function can_update_entry_and_ensure_multiple_files_can_be_uploaded()
+    {
+        AssetContainer::make('assets')->disk('local')->save();
+
+        Blueprint::make('albums')
+            ->setNamespace('collections.albums')
+            ->setContents([
+                'title' => 'Albums',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'artist',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'record_label',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'attachments',
+                                'field' => [
+                                    'mode' => 'list',
+                                    'container' => 'assets',
+                                    'restrict' => false,
+                                    'allow_uploads' => true,
+                                    'show_filename' => true,
+                                    'display' => 'Attachment',
+                                    'type' => 'assets',
+                                    'icon' => 'assets',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+                'attachments' => [
+                    UploadedFile::fake()->create('foobar.png'),
+                    UploadedFile::fake()->create('barfoo.jpg'),
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertNotNull($entry->get('attachments'));
+        $this->assertIsArray($entry->get('attachments'));
+        $this->assertSame(count($entry->get('attachments')), 2);
     }
 
     /** @test */
