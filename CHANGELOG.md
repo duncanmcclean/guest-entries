@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## v1.0.6 (2021-09-24)
+
+### What's new
+
+* File uploads now support uploading multiple files #10
+
+### What's fixed
+
+* File uploads will now include a timestamp in the saved filename #10
+
 ## v1.0.5 (2021-09-21)
 
 ### What's fixed
