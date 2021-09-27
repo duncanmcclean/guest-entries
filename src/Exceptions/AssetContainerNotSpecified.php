@@ -2,7 +2,7 @@
 
 namespace DoubleThreeDigital\GuestEntries\Exceptions;
 
-class AssetContainerNotFoundSpecified extends \Exception
+class AssetContainerNotSpecified extends \Exception
 {
     //
 }

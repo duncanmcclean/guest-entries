@@ -5,7 +5,7 @@ namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
-use DoubleThreeDigital\GuestEntries\Exceptions\AssetContainerNotFoundSpecified;
+use DoubleThreeDigital\GuestEntries\Exceptions\AssetContainerNotSpecified;
 use DoubleThreeDigital\GuestEntries\Http\Requests\DestroyRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\StoreRequest;
 use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
@@ -159,7 +159,7 @@ class GuestEntryController extends Controller
     protected function uploadFile(string $key, Field $field, Request $request)
     {
         if (! isset($field->config()['container'])) {
-            throw new AssetContainerNotFoundSpecified("Please specify an asset container on your [{$key}] field, in order for file uploads to work.");
+            throw new AssetContainerNotSpecified("Please specify an asset container on your [{$key}] field, in order for file uploads to work.");
         }
 
         /** @var \Statamic\Assets\AssetContainer $assetContainer */
