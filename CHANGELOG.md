@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.0.7 (2021-09-27)
+
+### What's fixe
+
+* Fixed PSR-4 autoloading issue #11
+
 ## v1.0.6 (2021-09-24)
 
 ### What's new
