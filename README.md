@@ -1,6 +1,6 @@
 <!-- statamic:hide -->
 
-![Banner](banner.png)
+![Banner](./banner.png)
 
 ## Guest Entries
 
@@ -8,12 +8,31 @@
 
 This repository contains the source code for Guest Entries. Guest Entries allows your users to perform CRUD operations on the front-end of your site. (basically [Workshop](https://statamic.com/addons/statamic/workshop) from the v2 days)
 
-Guest Entries is a commercial addon, to use it in production, you'll need to [purchase a license](https://statamic.com/guest-entries).
+### User contributed content
+
+Let your users create and update your site's content, straight from the front-end. 
+
+### File uploads
+
+Allow your users to upload images or documents to your entries - on upload, they'll be saved as assets.
+
+### Simple spam prevention
+
+Guest Entries provides an optional honeypot you can add to your 'guest entry forms' to reduce spam.
 
 ## Installation
 
-1. Install via Composer `composer require doublethreedigital/guest-entries`
-2. To publish this addon's configuration file, run: `php artisan vendor:publish --tag="guest-entries-config"`
+First, require Guest Entries as a Composer dependency:
+
+```
+composer require doublethreedigital/guest-entries
+```
+
+Once installed, you’ll want to publish the default configuration file.
+
+```
+php artisan vendor:publish --tag="runway-config"
+```
 
 ## Documentation
 
@@ -244,16 +263,20 @@ If you need to upload multiple files, just use multiple inputs, like so:
 
 When the form is submitted, the file will be uploaded to the specified asset container and will be linked to the entry.
 
+
+## Commercial addon
+
+Guest Entries is a commercial addon - you **must purchase a license** via the [Statamic Marketplace](https://statamic.com/addons/double-three-digital/guest-entries) to use it in a production environment.
+
 ## Security
 
-From a security perspective, only the latest version will receive a security release if a vulnerability is found.
+Only the latest version of Guest Entries (v1.0) will receive security updates if a vulnerability is found. 
 
-If you discover a security vulnerability within Guest Entries, please report it [via email](mailto:security@doublethree.digital) straight away. Please don't report security issues in the issue tracker.
+If you discover a security vulnerability, please report it to Duncan straight away, [via email](mailto:security@doublethree.digital). Please don't report security issues through GitHub Issues.
 
-## Resources
+## Official Support
 
-* [**Issue Tracker**](https://github.com/doublethreedigital/guest-entries/issues): Find & report bugs in :addonName
-* [**Email**](mailto:help@doublethree.digital): Support from the developer behind the addon
+If you're in need of some help with Guest Entries, [send me an email](mailto:help@doublethree.digital) and I'll do my best to help! (I'll usually respond within a day)
 
 <!-- statamic:hide -->
 
