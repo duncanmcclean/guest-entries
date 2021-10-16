@@ -21,7 +21,7 @@ use Statamic\Fieldtypes\Assets\Assets;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published', 'date'];
+    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
 
     public function store(StoreRequest $request)
     {
@@ -42,6 +42,11 @@ class GuestEntryController extends Controller
             $entry->slug(Str::slug($request->get('title')));
         }
 
+        if ($collection->dated()) {
+            $this->ignoredParameters[] = 'date';
+            $entry->date($request->get('date') ?? now());
+        }
+
         if ($request->has('published')) {
             $entry->published($request->get('published') == '1' || $request->get('published') == 'true' ? true : false);
         }
@@ -55,10 +60,6 @@ class GuestEntryController extends Controller
             }
 
             $entry->set($key, $value);
-        }
-
-        if ($collection->dated()) {
-            $entry->date($request->get('date') ?? now());
         }
 
         $entry->save();
@@ -83,6 +84,10 @@ class GuestEntryController extends Controller
 
         if ($request->has('slug')) {
             $entry->slug($request->get('slug'));
+        }
+
+        if ($entry->collection()->dated()) {
+            $this->ignoredParameters[] = 'date';
         }
 
         if ($request->has('published')) {

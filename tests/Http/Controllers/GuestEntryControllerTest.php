@@ -203,6 +203,33 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_where_collection_is_not_date_ordered_and_ensure_date_is_saved()
+    {
+        TestTime::freeze('Y-m-d H:i', '2021-10-10 11:11');
+
+        Collection::make('comments')->dated(false)->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'date' => '2021-12-25',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->get('date'), '2021-12-25');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertStringContainsString('this-is-great.md', $entry->path());
+    }
+
+    /** @test */
     public function can_store_entry_and_ensure_honeypot_works_if_value_is_empty()
     {
         Config::set('guest-entries.honeypot', 'postcode');
@@ -783,6 +810,42 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'allo-mate');
 
         $this->assertStringContainsString('2021-09-09.allo-mate.md', $entry->path());
+    }
+
+    /** @test */
+    public function can_update_entry_and_date_and_ensure_date_is_saved_normally_if_not_dated_collection()
+    {
+        Collection::make('albums')->dated(false)->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+                'date' => '2021-09-09',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->get('date'), '2021-09-09');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertStringContainsString('allo-mate.md', $entry->path());
     }
 
     /** @test */
