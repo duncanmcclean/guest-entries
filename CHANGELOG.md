@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## v1.0.8 (2021-10-16)
+
+### What's new
+
+* Guest Entries now supports multi-site #18
+
+### What's improved
+
+* Improved date handling #17
+
 ## v1.0.7 (2021-09-27)
 
 ### What's fixe
