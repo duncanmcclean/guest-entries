@@ -207,6 +207,50 @@ class GuestEntryControllerTest extends TestCase
     {
         TestTime::freeze('Y-m-d H:i', '2021-10-10 11:11');
 
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'date',
+                                'field' => [
+                                    'mode' => 'single',
+                                    'time_enabled' => false,
+                                    'time_required' => false,
+                                    'earliest_date' => '1900-01-01',
+                                    'format' => 'Y-m-d',
+                                    'full_width' => false,
+                                    'inline' => false,
+                                    'columns' => 1,
+                                    'rows' => 1,
+                                    'display' => 'Date',
+                                    'type' => 'date',
+                                    'icon' => 'date',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
         Collection::make('comments')->dated(false)->save();
 
         $this
@@ -512,6 +556,75 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_and_ensure_date_is_in_same_format_defined_in_blueprint()
+    {
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'date',
+                                'field' => [
+                                    'mode' => 'single',
+                                    'time_enabled' => false,
+                                    'time_required' => false,
+                                    'earliest_date' => '1900-01-01',
+                                    'format' => 'Y',
+                                    'full_width' => false,
+                                    'inline' => false,
+                                    'columns' => 1,
+                                    'rows' => 1,
+                                    'display' => 'Date',
+                                    'type' => 'date',
+                                    'icon' => 'date',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->dated(false)->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'date' => '2009-06-06',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->get('date'), '2009');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertStringContainsString('this-is-great.md', $entry->path());
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();
@@ -813,8 +926,52 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
-    public function can_update_entry_and_date_and_ensure_date_is_saved_normally_if_not_dated_collection()
+    public function can_update_entry_and_ensure_date_is_in_same_format_as_defined_in_blueprint()
     {
+        Blueprint::make('albums')
+            ->setNamespace('collections.albums')
+            ->setContents([
+                'title' => 'Albums',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'date',
+                                'field' => [
+                                    'mode' => 'single',
+                                    'time_enabled' => false,
+                                    'time_required' => false,
+                                    'earliest_date' => '1900-01-01',
+                                    'format' => 'Y',
+                                    'full_width' => false,
+                                    'inline' => false,
+                                    'columns' => 1,
+                                    'rows' => 1,
+                                    'display' => 'Date',
+                                    'type' => 'date',
+                                    'icon' => 'date',
+                                    'listable' => 'hidden',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
         Collection::make('albums')->dated(false)->save();
 
         Entry::make()
@@ -842,7 +999,7 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->collectionHandle(), 'albums');
         $this->assertSame($entry->get('title'), 'Allo Mate!');
         $this->assertSame($entry->get('record_label'), 'Unknown');
-        $this->assertSame($entry->get('date'), '2021-09-09');
+        $this->assertSame($entry->get('date'), '2021');
         $this->assertSame($entry->slug(), 'allo-mate');
 
         $this->assertStringContainsString('allo-mate.md', $entry->path());
@@ -1079,6 +1236,42 @@ class GuestEntryControllerTest extends TestCase
                 'record_label' => 'Unknown',
             ],
         ]);
+    }
+
+    /** @test */
+    public function can_update_entry_and_date_and_ensure_date_is_saved_normally_if_not_dated_collection()
+    {
+        Collection::make('albums')->dated(false)->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+                'date' => '2021-09-09',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->get('date'), '2021-09-09');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertStringContainsString('allo-mate.md', $entry->path());
     }
 
     /** @test */

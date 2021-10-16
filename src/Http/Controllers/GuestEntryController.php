@@ -2,6 +2,7 @@
 
 namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
 
+use Carbon\Carbon;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
 use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
@@ -17,7 +18,8 @@ use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Fields\Field;
-use Statamic\Fieldtypes\Assets\Assets;
+use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
+use Statamic\Fieldtypes\Date as DateFieldtype;
 
 class GuestEntryController extends Controller
 {
@@ -55,8 +57,17 @@ class GuestEntryController extends Controller
             /** @var \Statamic\Fields\Field $blueprintField */
             $field = $collection->entryBlueprint()->field($key);
 
-            if ($field && $field->fieldtype() instanceof Assets) {
+            if ($field && $field->fieldtype() instanceof AssetFieldtype) {
                 $value = $this->uploadFile($key, $field, $request);
+            }
+
+            if ($field && $field->fieldtype() instanceof DateFieldtype) {
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
+
+                $value = Carbon::parse($value)->format($format);
             }
 
             $entry->set($key, $value);
@@ -98,8 +109,17 @@ class GuestEntryController extends Controller
             /** @var \Statamic\Fields\Field $blueprintField */
             $field = $entry->blueprint()->field($key);
 
-            if ($field && $field->fieldtype() instanceof Assets) {
+            if ($field && $field->fieldtype() instanceof AssetFieldtype) {
                 $value = $this->uploadFile($key, $field, $request);
+            }
+
+            if ($field && $field->fieldtype() instanceof DateFieldtype) {
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
+
+                $value = Carbon::parse($value)->format($format);
             }
 
             $data[$key] = $value;
