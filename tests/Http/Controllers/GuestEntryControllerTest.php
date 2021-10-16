@@ -16,6 +16,7 @@ use Statamic\Facades\Entry;
 use Spatie\TestTime\TestTime;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Blueprint;
+use Statamic\Facades\Site;
 
 class GuestEntryControllerTest extends TestCase
 {
@@ -622,6 +623,126 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'this-is-great');
 
         $this->assertStringContainsString('this-is-great.md', $entry->path());
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_created_in_correct_site_by_request_payload()
+    {
+        Config::set('statamic.editions.pro', true);
+
+        Config::set('statamic.sites.sites', [
+            'one' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/one',
+            ],
+            'two' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/two',
+            ],
+        ]);
+
+        Site::setConfig(config('statamic.sites'));
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'site' => 'one',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+        $this->assertSame($entry->locale(), 'one');
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_created_in_correct_site_by_referer()
+    {
+        Config::set('statamic.editions.pro', true);
+
+        Config::set('statamic.sites.sites', [
+            'one' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/one',
+            ],
+            'two' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/two',
+            ],
+        ]);
+
+        Site::setConfig(config('statamic.sites'));
+
+        Collection::make('comments')->save();
+
+        $this
+            ->from('/two/something')
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+        $this->assertSame($entry->locale(), 'two');
+    }
+
+    /** @test */
+    public function can_store_entry_and_ensure_created_in_correct_site_by_current_site_fallback()
+    {
+        Config::set('statamic.editions.pro', true);
+
+        Config::set('statamic.sites.sites', [
+            'one' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/one',
+            ],
+            'two' => [
+                'name' => config('app.name'),
+                'locale' => 'en_US',
+                'url' => '/two',
+            ],
+        ]);
+
+        Site::setConfig(config('statamic.sites'));
+        Site::setCurrent('two');
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+        $this->assertSame($entry->locale(), 'two');
     }
 
     /** @test */

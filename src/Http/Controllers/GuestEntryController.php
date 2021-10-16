@@ -17,9 +17,11 @@ use Illuminate\Support\Str;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
+use Statamic\Facades\Site as SiteFacade;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
+use Statamic\Sites\Site;
 
 class GuestEntryController extends Controller
 {
@@ -36,6 +38,7 @@ class GuestEntryController extends Controller
         /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::make()
             ->collection($collection->handle())
+            ->locale($this->guessSiteFromRequest($request))
             ->published(false);
 
         if ($request->has('slug')) {
@@ -230,6 +233,29 @@ class GuestEntryController extends Controller
         }
 
         return empty($request->get($honeypot));
+    }
+
+    protected function guessSiteFromRequest($request): Site
+    {
+        if ($site = $request->get('site')) {
+            return SiteFacade::get($site);
+        }
+
+        foreach (SiteFacade::all() as $site) {
+            if (Str::contains($request->url(), $site->url())) {
+                return $site;
+            }
+        }
+
+        if ($referer = $request->header('referer')) {
+            foreach (SiteFacade::all() as $site) {
+                if (Str::contains($referer, $site->url())) {
+                    return $site;
+                }
+            }
+        }
+
+        return SiteFacade::current();
     }
 
     protected function withSuccess(Request $request, array $data = [])
