@@ -31,7 +31,7 @@ composer require doublethreedigital/guest-entries
 Once installed, you’ll want to publish the default configuration file.
 
 ```
-php artisan vendor:publish --tag="runway-config"
+php artisan vendor:publish --tag="guest-entries-config"
 ```
 
 ## Documentation
