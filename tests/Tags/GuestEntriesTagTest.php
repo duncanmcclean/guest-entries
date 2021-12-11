@@ -13,7 +13,7 @@ use Statamic\Tags\Tags;
 
 class GuestEntriesTagTest extends TestCase
 {
-    /** @var Tags $tag */
+    /** @var Tags */
     protected $tag;
 
     public function setUp(): void

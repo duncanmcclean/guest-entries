@@ -20,7 +20,7 @@ class GuestEntriesTag extends Tags
         $collectionHandle = $this->params->get('collection');
 
         if (! $collectionHandle) {
-            throw new \Exception("Guest Entries: The `collection` parameter is required when creating an entry.");
+            throw new \Exception('Guest Entries: The `collection` parameter is required when creating an entry.');
         }
 
         if (! Collection::handleExists($collectionHandle)) {
@@ -36,11 +36,11 @@ class GuestEntriesTag extends Tags
         $collectionHandle = $this->params->get('collection');
 
         if (! $collectionHandle) {
-            throw new \Exception("Guest Entries: The `collection` parameter is required when updating an entry.");
+            throw new \Exception('Guest Entries: The `collection` parameter is required when updating an entry.');
         }
 
         if (! $entryId) {
-            throw new \Exception("Guest Entries: The `id` parameter is required when updating an entry.");
+            throw new \Exception('Guest Entries: The `id` parameter is required when updating an entry.');
         }
 
         if (! Collection::handleExists($collectionHandle)) {
@@ -60,11 +60,11 @@ class GuestEntriesTag extends Tags
         $collectionHandle = $this->params->get('collection');
 
         if (! $collectionHandle) {
-            throw new \Exception("Guest Entries: The `collection` parameter is required when deleting an entry.");
+            throw new \Exception('Guest Entries: The `collection` parameter is required when deleting an entry.');
         }
 
         if (! $entryId) {
-            throw new \Exception("Guest Entries: The `id` parameter is required when deleting an entry.");
+            throw new \Exception('Guest Entries: The `id` parameter is required when deleting an entry.');
         }
 
         if (! Collection::handleExists($collectionHandle)) {
