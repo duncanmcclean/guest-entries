@@ -11,11 +11,11 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
-use Statamic\Facades\Collection;
-use Statamic\Facades\Entry;
 use Spatie\TestTime\TestTime;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Blueprint;
+use Statamic\Facades\Collection;
+use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
 
 class GuestEntryControllerTest extends TestCase
@@ -469,7 +469,7 @@ class GuestEntryControllerTest extends TestCase
                 'title' => 'This is great',
                 'slug' => 'this-is-great',
                 'attachment' => UploadedFile::fake()->create('foobar.png'),
-        ])
+            ])
             ->assertRedirect();
 
         $entry = Entry::all()->last();
@@ -541,7 +541,7 @@ class GuestEntryControllerTest extends TestCase
                     UploadedFile::fake()->create('foobar.png'),
                     UploadedFile::fake()->create('barfoo.jpg'),
                 ],
-        ])
+            ])
             ->assertRedirect();
 
         $entry = Entry::all()->last();

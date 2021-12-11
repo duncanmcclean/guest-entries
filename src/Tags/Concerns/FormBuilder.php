@@ -82,7 +82,7 @@ trait FormBuilder
      */
     public function errors()
     {
-        if (!$this->hasErrors()) {
+        if (! $this->hasErrors()) {
             return false;
         }
 
@@ -93,7 +93,7 @@ trait FormBuilder
         }
 
         return ($this->content === '')    // If this is a single tag...
-            ? !empty($errors)             // just output a boolean.
+            ? ! empty($errors)             // just output a boolean.
             : $errors;  // Otherwise, parse the content loop.
     }
 
