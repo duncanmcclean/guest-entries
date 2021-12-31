@@ -42,6 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          composer remove statamic/cms
           composer require "laravel/framework:${{ matrix.framework }}" "statamic/cms:${{ matrix.statamic }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer install --no-interaction
 
