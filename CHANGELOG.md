@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.1.0 (2021-12-31)
+
+### What's new
+
+* PHP 8.1 Support #21
+
 ## v1.0.8 (2021-10-16)
 
 ### What's new
