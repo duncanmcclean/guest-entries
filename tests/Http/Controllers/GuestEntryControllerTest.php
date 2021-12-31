@@ -42,7 +42,8 @@ class GuestEntryControllerTest extends TestCase
                 '_collection' => 'comments',
                 'title' => 'This is great',
                 'slug' => 'this-is-great',
-            ]);
+            ])
+            ->assertRedirect();
 
         $entry = Entry::all()->last();
 
