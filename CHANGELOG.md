@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v1.1.1 (2021-12-31)
+
+Same as [v1.1.0](https://github.com/doublethreedigital/guest-entries/releases/tag/v1.1.0)
+
 ## v1.1.0 (2021-12-31)
 
 ### What's new
