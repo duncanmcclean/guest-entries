@@ -37,15 +37,12 @@ class GuestEntryControllerTest extends TestCase
     {
         Collection::make('comments')->save();
 
-        $response = $this
+        $this
             ->post(route('statamic.guest-entries.store'), [
                 '_collection' => 'comments',
                 'title' => 'This is great',
                 'slug' => 'this-is-great',
             ]);
-            // ->assertRedirect();
-
-        dd($response);
 
         $entry = Entry::all()->last();
 
