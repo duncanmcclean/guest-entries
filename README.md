@@ -6,7 +6,9 @@
 
 <!-- /statamic:hide -->
 
-This repository contains the source code for Guest Entries. Guest Entries allows your users to perform CRUD operations on the front-end of your site. (basically [Workshop](https://statamic.com/addons/statamic/workshop) from the v2 days)
+Guest Entries allows your users to create, update & delete entries from the front-end of your site. Essentially [Workshop](https://statamic.com/addons/statamic/workshop) from the v2 days.
+
+This repository contains the source code for Guest Entries. Guest Entries is a commercial addon, to use it in production, you'll need to [purchase a license](https://statamic.com/guest-entries).
 
 ### User contributed content
 
