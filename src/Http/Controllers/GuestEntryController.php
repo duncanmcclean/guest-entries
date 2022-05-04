@@ -200,13 +200,13 @@ class GuestEntryController extends Controller
             $uploadedFiles = [$uploadedFiles];
         }
 
-        /** @var \Illuminate\Http\Testing\File $file */
+        /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
-            $path = '/'.$uploadedFile->storeAs(
+            $path = '/' . $uploadedFile->storeAs(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']
                     : $assetContainer->diskPath(),
-                now()->timestamp.'-'.$uploadedFile->getClientOriginalName(),
+                now()->timestamp . '-' . $uploadedFile->getClientOriginalName(),
                 $assetContainer->diskHandle()
             );
 
