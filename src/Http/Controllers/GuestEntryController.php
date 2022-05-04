@@ -205,12 +205,17 @@ class GuestEntryController extends Controller
             $path = '/' . $uploadedFile->storeAs(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']
-                    : $assetContainer->diskPath(),
+                    : '',
                 now()->timestamp . '-' . $uploadedFile->getClientOriginalName(),
                 $assetContainer->diskHandle()
             );
 
-            $files[] = str_replace($assetContainer->diskPath(), '', $path);
+            // Does path start with a '/'? If so, strip it off.
+            if (substr($path, 0, 1) === '/') {
+                $path = substr($path, 1);
+            }
+
+            $files[] = $path;
         }
 
         if (count($files) === 0) {
