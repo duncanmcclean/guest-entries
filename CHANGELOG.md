@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.2.1 (2022-05-04)
+
+### What's fixed
+
+- Fixed an issue with file uploads where the path would be duplicated #24 #25
+
 ## v1.2.0 (2022-02-26)
 
 ### What's new
