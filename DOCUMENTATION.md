@@ -1,3 +1,17 @@
+## Installation
+
+First, require Guest Entries as a Composer dependency:
+
+```
+composer require doublethreedigital/guest-entries
+```
+
+Once installed, you’ll want to publish the default configuration file.
+
+```
+php artisan vendor:publish --tag="guest-entries-config"
+```
+
 ## Configuration
 
 Guest Entries provides a configuration file that allows you to define the collections you wish for entries to be created/updated within. You will have published this configuration file during the installation process - it'll be located at `config/guest-entries.php`.
