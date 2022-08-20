@@ -14,7 +14,7 @@ This repository contains the source code for Guest Entries. Guest Entries is a c
 
 ## Documentation
 
-Review the documentation on the [Statamic Marketplace](https://statamic.com/addons/double-three-digital/guest-entries/docs).
+Review the documentation on the [Statamic Marketplace](https://statamic.com/addons/duncanmcclean/guest-entries/docs).
 
 ## Support
 
@@ -24,7 +24,7 @@ If you have any questions or need help, please let me know! Either via [GitHub I
 
 ## Commercial addon
 
-Guest Entries is a commercial addon - you **must purchase a license** via the [Statamic Marketplace](https://statamic.com/addons/double-three-digital/guest-entries) to use it in a production environment.
+Guest Entries is a commercial addon - you **must purchase a license** via the [Statamic Marketplace](https://statamic.com/addons/duncanmcclean/guest-entries) to use it in a production environment.
 
 ---
 
