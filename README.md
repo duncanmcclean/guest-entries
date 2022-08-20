@@ -18,7 +18,7 @@ Review the documentation on the [Statamic Marketplace](https://statamic.com/addo
 
 ## Support
 
-If you have any questions or need help, please let me know! Either via [GitHub Issues](https://github.com/duncanmcclean/guest-entries/issues/new/choose) (for bugs & feature requests) or [via email](mailto:help@doublethree.digital) for everything else!
+If you have any questions or need help, please let me know! Either via [GitHub Issues](https://github.com/duncanmcclean/guest-entries/issues/new/choose) (for bugs & feature requests) or [via email](mailto:hello@doublethree.digital) for everything else!
 
 > Only the latest version of this addon is supported. If you open a bug report using an old version, your issue will be closed.
 
