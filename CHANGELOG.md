@@ -20,7 +20,7 @@
 
 ## v1.1.1 (2021-12-31)
 
-Same as [v1.1.0](https://github.com/doublethreedigital/guest-entries/releases/tag/v1.1.0)
+Same as [v1.1.0](https://github.com/duncanmcclean/guest-entries/releases/tag/v1.1.0)
 
 ## v1.1.0 (2021-12-31)
 
@@ -81,8 +81,8 @@ Same as [v1.1.0](https://github.com/doublethreedigital/guest-entries/releases/ta
 
 ### What's new
 
-- [Events](https://github.com/doublethreedigital/guest-entries#events)
-- Added tag for [error handing](https://github.com/doublethreedigital/guest-entries#events) #3
+- [Events](https://github.com/duncanmcclean/guest-entries#events)
+- Added tag for [error handing](https://github.com/duncanmcclean/guest-entries#events) #3
 
 ## v1.0.1 (2021-09-04)
 
