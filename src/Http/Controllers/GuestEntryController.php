@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
@@ -202,11 +203,11 @@ class GuestEntryController extends Controller
 
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
-            $path = '/' . $uploadedFile->storeAs(
+            $path = '/'.$uploadedFile->storeAs(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']
                     : '',
-                now()->timestamp . '-' . $uploadedFile->getClientOriginalName(),
+                now()->timestamp.'-'.$uploadedFile->getClientOriginalName(),
                 $assetContainer->diskHandle()
             );
 
@@ -215,6 +216,15 @@ class GuestEntryController extends Controller
                 $path = substr($path, 1);
             }
 
+            // Ensure asset is created in Statamic (otherwise, it won't show up in
+            // the Control Panel for sites with the Stache watcher disabled).
+            $asset = Asset::make()
+                ->container($assetContainer->handle())
+                ->path($path);
+
+            $asset->save();
+
+            // Push to the array
             $files[] = $path;
         }
 
@@ -267,7 +277,7 @@ class GuestEntryController extends Controller
     {
         if ($request->wantsJson()) {
             $data = array_merge($data, [
-                'status'  => 'success',
+                'status' => 'success',
                 'message' => null,
             ]);
 
@@ -283,7 +293,7 @@ class GuestEntryController extends Controller
     {
         if ($request->wantsJson()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => $errorMessage,
             ]);
         }
