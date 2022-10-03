@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.2.2 (2022-10-03)
+
+### What's fixed
+
+- Fixed assets not being visible in Control Panel after file upload when the Stache watcher has been disabled #28 #29
+
 ## v1.2.1 (2022-05-04)
 
 ### What's fixed
