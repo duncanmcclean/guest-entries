@@ -216,14 +216,15 @@ class GuestEntryController extends Controller
                 $path = substr($path, 1);
             }
 
-            // Create asset in Statamic
+            // Ensure asset is created in Statamic (otherwise, it won't show up in
+            // the Control Panel for sites with the Stache watcher disabled).
             $asset = Asset::make()
                 ->container($assetContainer->handle())
                 ->path($path);
 
             $asset->save();
 
-            // Add to array
+            // Push to the array
             $files[] = $path;
         }
 
