@@ -1422,6 +1422,42 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_update_entry_and_ensure_entry_is_only_saved_once()
+    {
+        Event::fake();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        Event::assertDispatchedTimes(EntrySaved::class, 1);
+    }
+
+    /** @test */
     public function can_destroy_entry()
     {
         Collection::make('albums')->save();
