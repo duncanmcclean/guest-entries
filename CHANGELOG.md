@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v1.2.3 (2022-10-17)
+
+### What's fixed
+
+- Avoid entries being saved twice #30 #31
+
 ## v1.2.2 (2022-10-03)
 
 ### What's fixed
