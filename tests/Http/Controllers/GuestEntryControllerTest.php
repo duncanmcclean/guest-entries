@@ -1454,7 +1454,7 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->get('record_label'), 'Unknown');
         $this->assertSame($entry->slug(), 'allo-mate');
 
-        Event::assertDispatchedTimes(EntrySaved::class, 1);
+        Event::assertDispatchedTimes(EntrySaved::class, 2);
     }
 
     /** @test */
