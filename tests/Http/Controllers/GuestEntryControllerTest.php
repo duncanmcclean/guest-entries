@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Spatie\TestTime\TestTime;
+use Statamic\Events\EntrySaved;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Blueprint;
 use Statamic\Facades\Collection;
@@ -746,6 +747,31 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_and_ensure_entry_is_only_saved_once()
+    {
+        Event::fake();
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        Event::assertDispatchedTimes(EntrySaved::class, 1);
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();
@@ -1393,6 +1419,42 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'allo-mate');
 
         $this->assertStringContainsString('allo-mate.md', $entry->path());
+    }
+
+    /** @test */
+    public function can_update_entry_and_ensure_entry_is_only_saved_once()
+    {
+        Event::fake();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        Event::assertDispatchedTimes(EntrySaved::class, 2);
     }
 
     /** @test */

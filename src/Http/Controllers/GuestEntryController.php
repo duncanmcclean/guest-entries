@@ -77,7 +77,6 @@ class GuestEntryController extends Controller
             $entry->set($key, $value);
         }
 
-        $entry->save();
         $entry->touch();
 
         event(new GuestEntryCreated($entry));
@@ -161,7 +160,6 @@ class GuestEntryController extends Controller
                 $entry->date($request->get('date'));
             }
 
-            $entry->save();
             $entry->touch();
         }
 
