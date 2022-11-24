@@ -97,11 +97,11 @@ You may also configure this addon's [Honeypot](#honeypot) feature. `false` will 
 
 When using any of the `guest-entries` tags, there's a few parameters available to you:
 
-**`collection` *required***
+**`collection` _required_**
 
 Every tag will require you to pass in the `collection` parameter, which should be the handle of the collection you want to deal with.
 
-**`id` *sometimes required***
+**`id` _sometimes required_**
 
 Both the `update` and `delete` tags require you to pass in the ID of the entry you want to work with.
 
@@ -116,6 +116,24 @@ You may specify a URL to redirect the user to once the Guest Entry form has been
 **`request`**
 
 You may specify a Laravel Form Request to be used for validation of the form. You can pass in simply the name of the class or the FQNS (fully qualified namespace) - eg. `ArticleStoreRequest` vs `App\Http\Requests\ArticleStoreRequest`
+
+### Special Inputs
+
+There's a few 'special' input fields that you can take advantage of:
+
+**`slug`**
+
+Pretty self-explanatory. Allows you to provide a slug for the created entry. When not provided, a slugified version of the `title` is used.
+
+**`date`**
+
+When using a dated collection, a `date` will be allowed. When not provided, the current date is used.
+
+**`published`**
+
+Pretty self-explanatory. Allows you to control the publish state of the created entry. You should provide either a `1` or `true` to publish an entry.
+
+When not provided, the entry will be set to unpublished.
 
 ### Variables
 
