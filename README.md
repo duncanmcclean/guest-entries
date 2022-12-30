@@ -14,7 +14,7 @@ This repository contains the source code for Guest Entries. Guest Entries is a c
 
 ## Documentation
 
-Review the documentation on the [Statamic Marketplace](https://statamic.com/addons/duncanmcclean/guest-entries/docs).
+Visit the [Guest Entries website](https://guest-entries.duncanmcclean.com/) to read the addon's documentation.
 
 ## Support
 
