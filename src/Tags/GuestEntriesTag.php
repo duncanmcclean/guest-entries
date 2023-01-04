@@ -90,7 +90,7 @@ class GuestEntriesTag extends Tags
             $errors[]['value'] = $error;
         }
 
-        return $this->parseLoop($errors);
+        return $errors;
     }
 
     public function hasErrors()
