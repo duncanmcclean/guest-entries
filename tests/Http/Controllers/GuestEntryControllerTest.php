@@ -462,8 +462,6 @@ class GuestEntryControllerTest extends TestCase
 
         Collection::make('comments')->save();
 
-        $this->withoutExceptionHandling();
-
         $this
             ->post(route('statamic.guest-entries.store'), [
                 '_collection' => 'comments',
@@ -769,6 +767,182 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'this-is-great');
 
         Event::assertDispatchedTimes(EntrySaved::class, 1);
+    }
+
+    /** @test */
+    public function can_store_entry_with_replicator_field()
+    {
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'text' => 'I have a Blue Peter badge!',
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+    }
+
+    /** @test */
+    public function can_store_entry_with_replicator_field_and_an_assets_field_inside_the_replicator()
+    {
+        AssetContainer::make('assets')->disk('local')->save();
+
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                                [
+                                                    'handle' => 'document',
+                                                    'field' => [
+                                                        'mode' => 'list',
+                                                        'container' => 'assets',
+                                                        'restrict' => false,
+                                                        'allow_uploads' => true,
+                                                        'show_filename' => true,
+                                                        'display' => 'Document',
+                                                        'type' => 'assets',
+                                                        'icon' => 'assets',
+                                                        'listable' => 'hidden',
+                                                        'max_items' => 1,
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->save();
+
+        $this->withoutExceptionHandling();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'document' => UploadedFile::fake()->create('document.pdf', 100),
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+
+        $this->assertIsString($entry->get('things')[0]['text']);
+        $this->assertIsString($entry->get('things')[1]['document']);
     }
 
     /** @test */
@@ -1455,6 +1629,224 @@ class GuestEntryControllerTest extends TestCase
         $this->assertSame($entry->slug(), 'allo-mate');
 
         Event::assertDispatchedTimes(EntrySaved::class, 2);
+    }
+
+    /** @test */
+    public function can_update_entry_with_replicator_field()
+    {
+        Blueprint::make('albums')
+            ->setNamespace('collections.albums')
+            ->setContents([
+                'title' => 'Albums',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'artist',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'record_label',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'text' => 'I have a Blue Peter badge!',
+                    ],
+                ],
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+    }
+
+    /** @test */
+    public function can_update_entry_with_replicator_field_and_an_assets_field_inside_the_replicator()
+    {
+        Blueprint::make('albums')
+            ->setNamespace('collections.albums')
+            ->setContents([
+                'title' => 'Albums',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'artist',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'record_label',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                                [
+                                                    'handle' => 'document',
+                                                    'field' => [
+                                                        'mode' => 'list',
+                                                        'container' => 'assets',
+                                                        'restrict' => false,
+                                                        'allow_uploads' => true,
+                                                        'show_filename' => true,
+                                                        'display' => 'Document',
+                                                        'type' => 'assets',
+                                                        'icon' => 'assets',
+                                                        'listable' => 'hidden',
+                                                        'max_items' => 1,
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('albums')->save();
+
+        Entry::make()
+            ->id('allo-mate-idee')
+            ->collection('albums')
+            ->slug('allo-mate')
+            ->data([
+                'title' => 'Allo Mate!',
+                'artist' => 'Guvna B',
+            ])
+            ->save();
+
+        $this
+            ->post(route('statamic.guest-entries.update'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+                'record_label' => 'Unknown',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'document' => UploadedFile::fake()->create('document.pdf', 100),
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::find('allo-mate-idee');
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'albums');
+        $this->assertSame($entry->get('title'), 'Allo Mate!');
+        $this->assertSame($entry->get('record_label'), 'Unknown');
+        $this->assertSame($entry->slug(), 'allo-mate');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+
+        $this->assertIsString($entry->get('things')[0]['text']);
+        $this->assertIsString($entry->get('things')[1]['document']);
     }
 
     /** @test */
