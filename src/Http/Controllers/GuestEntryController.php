@@ -105,20 +105,9 @@ class GuestEntryController extends Controller
             /** @var \Statamic\Fields\Field $blueprintField */
             $field = $entry->blueprint()->field($key);
 
-            if ($field && $field->fieldtype() instanceof AssetFieldtype) {
-                $value = $this->uploadFile($key, $field, $request);
-            }
-
-            if ($field && $field->fieldtype() instanceof DateFieldtype) {
-                $format = $field->fieldtype()->config(
-                    'format',
-                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
-                );
-
-                $value = Carbon::parse($value)->format($format);
-            }
-
-            $data[$key] = $value;
+            $data[$key] = $field
+                ? $this->processField($field, $key, $value, $request)
+                : $value;
         }
 
         if ($entry->revisionsEnabled()) {
