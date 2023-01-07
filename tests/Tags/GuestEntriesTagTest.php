@@ -2,13 +2,12 @@
 
 use DoubleThreeDigital\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
+use function PHPUnit\Framework\assertStringContainsString;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Tags\Tags;
-
-use function PHPUnit\Framework\assertStringContainsString;
 
 $tag = null;
 
@@ -65,7 +64,6 @@ it('throws an exception when attempting to retrurn create guest entry form if no
 })->throws(\Exception::class);
 
 it('throws an exception when attempting to return create guest entry form when collection does not exist', function () use (&$tag) {
-
     $tag->setParameters([
         'collection' => 'lalalalallalalal',
     ]);
@@ -175,7 +173,6 @@ it('throws an exception when attempting to return update guest entry form if no 
 })->throws(CollectionNotFoundException::class);
 
 it('throws an exception when attempting to return update guest entry form if no entry ID is provided', function () use (&$tag) {
-
     Collection::make('guestbook')->save();
 
     Entry::make()
