@@ -1,9 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Tests\Tags;
-
 use DoubleThreeDigital\GuestEntries\Tags\GuestEntriesTag;
-use DoubleThreeDigital\GuestEntries\Tests\TestCase;
 use Illuminate\Container\EntryNotFoundException;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
@@ -11,470 +8,418 @@ use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Tags\Tags;
 
-class GuestEntriesTagTest extends TestCase
-{
+use function PHPUnit\Framework\assertStringContainsString;
+
+$tag = null;
+
+beforeEach(function () use (&$tag) {
     /** @var Tags */
-    protected $tag;
+    $tag = resolve(GuestEntriesTag::class)
+        ->setParser(Antlers::parser())
+        ->setContext([]);
+});
 
-    public function setUp(): void
-    {
-        parent::setUp();
+it('returns create guest entry form', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->tag = resolve(GuestEntriesTag::class)
-            ->setParser(Antlers::parser())
-            ->setContext([]);
-    }
+    $tag->setParameters([
+        'collection' => 'guestbook',
+    ]);
 
-    /** @test */
-    public function can_return_create_guest_entry_form()
-    {
-        Collection::make('guestbook')->save();
+    $tag->setContent('
+        <h2>Create Guestbook Entry</h2>
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-        ]);
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        $this->tag->setContent('
-            <h2>Create Guestbook Entry</h2>
+        <button type="submit">Submit</button>
+    ');
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+    $usage = $tag->create();
 
-            <button type="submit">Submit</button>
-        ');
+    assertStringContainsString('http://localhost/!/guest-entries/create', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
 
-        $usage = $this->tag->create();
+    assertStringContainsString('<h2>Create Guestbook Entry</h2>', $usage);
+    assertStringContainsString('<textarea name="comment"></textarea>', $usage);
+});
 
-        $this->assertStringContainsString('http://localhost/!/guest-entries/create', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+it('throws an exception when attempting to retrurn create guest entry form if no collection is provided', function () use (&$tag) {
+    $tag->setParameters([
+        'collection' => null,
+    ]);
 
-        $this->assertStringContainsString('<h2>Create Guestbook Entry</h2>', $usage);
-        $this->assertStringContainsString('<textarea name="comment"></textarea>', $usage);
-    }
+    $tag->setContent('
+        <h2>Create Llalalalal Entry</h2>
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_create_guest_entry_form_if_no_collection_is_provided()
-    {
-        $this->expectException(\Exception::class);
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        $this->tag->setParameters([
-            'collection' => null,
-        ]);
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setContent('
-            <h2>Create Llalalalal Entry</h2>
+    $usage = $tag->create();
+})->throws(\Exception::class);
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+it('throws an exception when attempting to return create guest entry form when collection does not exist', function () use (&$tag) {
 
-            <button type="submit">Submit</button>
-        ');
+    $tag->setParameters([
+        'collection' => 'lalalalallalalal',
+    ]);
 
-        $usage = $this->tag->create();
-    }
+    $tag->setContent('
+        <h2>Create Llalalalal Entry</h2>
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_create_guest_entry_form_when_collection_does_not_exist()
-    {
-        $this->expectException(CollectionNotFoundException::class);
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        $this->tag->setParameters([
-            'collection' => 'lalalalallalalal',
-        ]);
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setContent('
-            <h2>Create Llalalalal Entry</h2>
+    $usage = $tag->create();
+})->throws(CollectionNotFoundException::class);
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+it('returns update guest entry form', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-            <button type="submit">Submit</button>
-        ');
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $usage = $this->tag->create();
-    }
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+    ]);
 
-    /** @test */
-    public function can_return_update_guest_entry_form()
-    {
-        Collection::make('guestbook')->save();
+    $tag->setContent('
+        <h2>Update Guestbook Entry</h2>
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'hello',
-        ]);
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry</h2>
+    $usage = $tag->update();
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
-            <button type="submit">Submit</button>
-        ');
+    assertStringContainsString('<h2>Update Guestbook Entry</h2>', $usage);
+    assertStringContainsString('<textarea name="comment"></textarea>', $usage);
+});
 
-        $usage = $this->tag->update();
+it('throws an exception when attempting to return update guest entry create form if no collection is provided', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $this->assertStringContainsString('<h2>Update Guestbook Entry</h2>', $usage);
-        $this->assertStringContainsString('<textarea name="comment"></textarea>', $usage);
-    }
+    $tag->setParameters([
+        'id' => 'hello',
+    ]);
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_update_guest_entry_form_if_no_collection_is_provided()
-    {
-        $this->expectException(\Exception::class);
+    $tag->setContent('
+        <h2>Update Guestbook Entry</h2>
 
-        Collection::make('guestbook')->save();
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setParameters([
-            'id' => 'hello',
-        ]);
+    $usage = $tag->update();
+})->throws(\Exception::class);
 
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry</h2>
+it('throws an exception when attempting to return update guest entry form if no ID is provided', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-            <button type="submit">Submit</button>
-        ');
+    $tag->setParameters([
+        'collection' => 'blah',
+        'id' => 'hello',
+    ]);
 
-        $usage = $this->tag->update();
-    }
+    $tag->setContent('
+        <h2>Update Guestbook Entry</h2>
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_update_guest_entry_form_when_collection_does_not_exist()
-    {
-        $this->expectException(CollectionNotFoundException::class);
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        Collection::make('guestbook')->save();
+        <button type="submit">Submit</button>
+    ');
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+    $usage = $tag->update();
+})->throws(CollectionNotFoundException::class);
 
-        $this->tag->setParameters([
-            'collection' => 'blah',
-            'id' => 'hello',
-        ]);
+it('throws an exception when attempting to return update guest entry form if no entry ID is provided', function () use (&$tag) {
 
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry</h2>
+    Collection::make('guestbook')->save();
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-            <button type="submit">Submit</button>
-        ');
+    $tag->setParameters([
+        'collection' => 'guestbook',
+    ]);
 
-        $usage = $this->tag->update();
-    }
+    $tag->setContent('
+        <h2>Update Guestbook Entry</h2>
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_update_guest_entry_form_if_no_entry_id_is_provided()
-    {
-        $this->expectException(\Exception::class);
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        Collection::make('guestbook')->save();
+        <button type="submit">Submit</button>
+    ');
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+    $usage = $tag->update();
+})->throws(\Exception::class);
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-        ]);
-
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry</h2>
-
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+it('throws an exception when attempting to return update guest entry form when entry ID does not exist', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-            <button type="submit">Submit</button>
-        ');
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $usage = $this->tag->update();
-    }
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'blhabahahahah',
+    ]);
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_update_guest_entry_form_when_entry_id_does_not_exist()
-    {
-        $this->expectException(EntryNotFoundException::class);
+    $tag->setContent('
+        <h2>Update Guestbook Entry</h2>
 
-        Collection::make('guestbook')->save();
+        <input name="name">
+        <input name="email">
+        <textarea name="comment"></textarea>
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'blhabahahahah',
-        ]);
+    $usage = $tag->update();
+})->throws(EntryNotFoundException::class);
 
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry</h2>
-
-            <input name="name">
-            <input name="email">
-            <textarea name="comment"></textarea>
+it('returns update guest entry form and entry values can be used', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-            <button type="submit">Submit</button>
-        ');
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World', 'comment' => 'Something can go here'])
+        ->save();
 
-        $usage = $this->tag->update();
-    }
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+    ]);
 
-    /** @test */
-    public function can_return_update_guest_entry_form_and_entry_values_can_be_used()
-    {
-        Collection::make('guestbook')->save();
+    $tag->setContent('
+        <h2>Update Guestbook Entry: {{ title }}</h2>
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World', 'comment' => 'Something can go here'])
-            ->save();
+        <input name="name">
+        <input name="email">
+        <textarea name="comment">Something can go here</textarea>
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'hello',
-        ]);
+        <button type="submit">Submit</button>
+    ');
 
-        $this->tag->setContent('
-            <h2>Update Guestbook Entry: {{ title }}</h2>
+    $usage = $tag->update();
 
-            <input name="name">
-            <input name="email">
-            <textarea name="comment">Something can go here</textarea>
+    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
-            <button type="submit">Submit</button>
-        ');
+    assertStringContainsString('<h2>Update Guestbook Entry: Hello World</h2>', $usage);
+    assertStringContainsString('<textarea name="comment">Something can go here</textarea>', $usage);
+});
 
-        $usage = $this->tag->update();
+it('returns delete guest entry form', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $this->assertStringContainsString('<h2>Update Guestbook Entry: Hello World</h2>', $usage);
-        $this->assertStringContainsString('<textarea name="comment">Something can go here</textarea>', $usage);
-    }
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+    ]);
 
-    /** @test */
-    public function can_return_delete_guest_entry_form()
-    {
-        Collection::make('guestbook')->save();
+    $tag->setContent('
+        <h2>Delete Guestbook Entry</h2>
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+        <button type="submit">DELETE</button>
+    ');
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'hello',
-        ]);
+    $usage = $tag->delete();
 
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry</h2>
+    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
-            <button type="submit">DELETE</button>
-        ');
+    assertStringContainsString('<h2>Delete Guestbook Entry</h2>', $usage);
+    assertStringContainsString('<button type="submit">DELETE</button>', $usage);
+});
 
-        $usage = $this->tag->delete();
+it('throws an exception when attempting to return delete guest entry form if no collection is provided', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $this->assertStringContainsString('<h2>Delete Guestbook Entry</h2>', $usage);
-        $this->assertStringContainsString('<button type="submit">DELETE</button>', $usage);
-    }
+    $tag->setParameters([
+        'id' => 'hello',
+    ]);
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_delete_guest_entry_form_if_no_collection_is_provided()
-    {
-        $this->expectException(\Exception::class);
+    $tag->setContent('
+        <h2>Delete Guestbook Entry</h2>
 
-        Collection::make('guestbook')->save();
+        <button type="submit">DELETE</button>
+    ');
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+    $usage = $tag->delete();
+})->throws(\Exception::class);
 
-        $this->tag->setParameters([
-            'id' => 'hello',
-        ]);
+it('throws an exception when attempting to return delete guest entry form when collection does not exist', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry</h2>
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-            <button type="submit">DELETE</button>
-        ');
+    $tag->setParameters([
+        'collection' => 'blah',
+        'id' => 'hello',
+    ]);
 
-        $usage = $this->tag->delete();
-    }
-
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_delete_guest_entry_form_when_collection_does_not_exist()
-    {
-        $this->expectException(CollectionNotFoundException::class);
+    $tag->setContent('
+        <h2>Delete Guestbook Entry</h2>
 
-        Collection::make('guestbook')->save();
+        <button type="submit">DELETE</button>
+    ');
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+    $usage = $tag->delete();
+})->throws(CollectionNotFoundException::class);
 
-        $this->tag->setParameters([
-            'collection' => 'blah',
-            'id' => 'hello',
-        ]);
+it('throws an exception when attempting to return delete guest entry form if no entry ID is provided', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry</h2>
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-            <button type="submit">DELETE</button>
-        ');
+    $tag->setParameters([
+        'collection' => 'guestbook',
+    ]);
 
-        $usage = $this->tag->delete();
-    }
+    $tag->setContent('
+        <h2>Delete Guestbook Entry</h2>
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_delete_guest_entry_form_if_no_entry_id_is_provided()
-    {
-        $this->expectException(\Exception::class);
+        <button type="submit">DELETE</button>
+    ');
 
-        Collection::make('guestbook')->save();
+    $usage = $tag->delete();
+})->throws(\Exception::class);
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+it('throws an exception when attempting to return delete guest entry form when entry ID does not exist', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-        ]);
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry</h2>
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'blhabahahahah',
+    ]);
 
-            <button type="submit">DELETE</button>
-        ');
+    $tag->setContent('
+        <h2>Delete Guestbook Entry</h2>
 
-        $usage = $this->tag->delete();
-    }
+        <button type="submit">DELETE</button>
+    ');
 
-    /** @test */
-    public function an_exception_is_thrown_when_attempting_to_return_delete_guest_entry_form_when_entry_id_does_not_exist()
-    {
-        $this->expectException(EntryNotFoundException::class);
+    $usage = $tag->delete();
+})->throws(EntryNotFoundException::class);
 
-        Collection::make('guestbook')->save();
+it('returns delete guest entry form and entry values can be used', function () use (&$tag) {
+    Collection::make('guestbook')->save();
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
 
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'blhabahahahah',
-        ]);
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+    ]);
 
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry</h2>
+    $tag->setContent('
+        <h2>Delete Guestbook Entry: {{ title }}</h2>
 
-            <button type="submit">DELETE</button>
-        ');
+        <button type="submit">DELETE</button>
+    ');
 
-        $usage = $this->tag->delete();
-    }
+    $usage = $tag->delete();
 
-    /** @test */
-    public function can_return_delete_guest_entry_form_and_entry_values_can_be_used()
-    {
-        Collection::make('guestbook')->save();
+    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
-        Entry::make()
-            ->collection('guestbook')
-            ->id('hello')
-            ->slug('hello')
-            ->data(['title' => 'Hello World'])
-            ->save();
-
-        $this->tag->setParameters([
-            'collection' => 'guestbook',
-            'id' => 'hello',
-        ]);
-
-        $this->tag->setContent('
-            <h2>Delete Guestbook Entry: {{ title }}</h2>
-
-            <button type="submit">DELETE</button>
-        ');
-
-        $usage = $this->tag->delete();
-
-        $this->assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_token"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-        $this->assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
-
-        $this->assertStringContainsString('<h2>Delete Guestbook Entry: Hello World</h2>', $usage);
-        $this->assertStringContainsString('<button type="submit">DELETE</button>', $usage);
-    }
-}
+    assertStringContainsString('<h2>Delete Guestbook Entry: Hello World</h2>', $usage);
+    assertStringContainsString('<button type="submit">DELETE</button>', $usage);
+});
