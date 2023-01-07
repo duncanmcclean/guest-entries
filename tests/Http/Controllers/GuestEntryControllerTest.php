@@ -462,8 +462,6 @@ class GuestEntryControllerTest extends TestCase
 
         Collection::make('comments')->save();
 
-        $this->withoutExceptionHandling();
-
         $this
             ->post(route('statamic.guest-entries.store'), [
                 '_collection' => 'comments',
