@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v2.0.1 (2023-01-07)
+
+### What's fixed
+
+- Fixed file uploads when Assets field is inside a Replicator #33 #34 by @duncanmcclean
+
 ## v2.0.0 (2022-12-29)
 
 The supported versions of PHP/Statamic/Laravel used alongside this addon have changed, the supported versions are now:
