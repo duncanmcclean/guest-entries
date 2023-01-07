@@ -19,7 +19,6 @@ use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
-use Statamic\Fields\Blueprint;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
