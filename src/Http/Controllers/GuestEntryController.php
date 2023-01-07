@@ -19,9 +19,11 @@ use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
+use Statamic\Fields\Blueprint;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
+use Statamic\Fieldtypes\Replicator;
 use Statamic\Sites\Site;
 
 class GuestEntryController extends Controller
@@ -61,20 +63,12 @@ class GuestEntryController extends Controller
             /** @var \Statamic\Fields\Field $blueprintField */
             $field = $collection->entryBlueprint()->field($key);
 
-            if ($field && $field->fieldtype() instanceof AssetFieldtype) {
-                $value = $this->uploadFile($key, $field, $request);
-            }
-
-            if ($field && $field->fieldtype() instanceof DateFieldtype) {
-                $format = $field->fieldtype()->config(
-                    'format',
-                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
-                );
-
-                $value = Carbon::parse($value)->format($format);
-            }
-
-            $entry->set($key, $value);
+            $entry->set(
+                $key,
+                $field
+                    ? $this->processField($field, $key, $value, $request)
+                    : $value
+            );
         }
 
         $entry->touch();
@@ -181,6 +175,61 @@ class GuestEntryController extends Controller
         event(new GuestEntryDeleted($entry));
 
         return $this->withSuccess($request);
+    }
+
+    protected function processField(Field $field, $key, $value, $request): mixed
+    {
+        if ($field && $field->fieldtype() instanceof Replicator) {
+            $replicatorField = $field;
+
+            return collect($value)
+                ->map(function ($item, $index) use ($replicatorField, $request) {
+                    $set = $item['type'] ?? array_values($replicatorField->fieldtype()->config('sets'))[0];
+
+                    return collect($item)
+                        ->reject(function ($value, $fieldHandle) {
+                            return $fieldHandle === 'type';
+                        })
+                        ->map(function ($value, $fieldHandle) use ($replicatorField, $index, $set, $request) {
+                            $field = collect($set['fields'])
+                                ->where('handle', $fieldHandle)
+                                ->map(function ($field) {
+                                    return new Field($field['handle'], $field['field']);
+                                })
+                                ->first();
+
+                            if (! $field) {
+                                return $value;
+                            }
+
+                            $key = "{$replicatorField->handle()}.{$index}.{$fieldHandle}";
+
+                            return $field
+                                ? $this->processField($field, $key, $value, $request)
+                                : $value;
+                        })
+                        ->merge([
+                            'type' => $item['type'] ?? array_keys($replicatorField->fieldtype()->config('sets'))[0],
+                        ])
+                        ->toArray();
+                })
+                ->toArray();
+        }
+
+        if ($field && $field->fieldtype() instanceof AssetFieldtype) {
+            $value = $this->uploadFile($key, $field, $request);
+        }
+
+        if ($field && $field->fieldtype() instanceof DateFieldtype) {
+            $format = $field->fieldtype()->config(
+                'format',
+                strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+            );
+
+            $value = Carbon::parse($value)->format($format);
+        }
+
+        return $value;
     }
 
     protected function uploadFile(string $key, Field $field, Request $request)

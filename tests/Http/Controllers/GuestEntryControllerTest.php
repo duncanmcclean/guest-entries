@@ -772,6 +772,182 @@ class GuestEntryControllerTest extends TestCase
     }
 
     /** @test */
+    public function can_store_entry_in_replicator_format()
+    {
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->save();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'text' => 'I have a Blue Peter badge!',
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+    }
+
+    /** @test */
+    public function can_store_entry_in_replicator_format_with_file_upload()
+    {
+        AssetContainer::make('assets')->disk('local')->save();
+
+        Blueprint::make('comments')
+            ->setNamespace('collections.comments')
+            ->setContents([
+                'title' => 'Comments',
+                'sections' => [
+                    'main' => [
+                        'display' => 'main',
+                        'fields' => [
+                            [
+                                'handle' => 'title',
+                                'field' => [
+                                    'type' => 'text',
+                                ],
+                            ],
+                            [
+                                'handle' => 'slug',
+                                'field' => [
+                                    'type' => 'slug',
+                                ],
+                            ],
+                            [
+                                'handle' => 'things',
+                                'field' => [
+                                    'sets' => [
+                                        'thing' => [
+                                            'display' => 'Thing',
+                                            'fields' => [
+                                                [
+                                                    'handle' => 'link',
+                                                    'field' => [
+                                                        'type' => 'text',
+                                                    ],
+                                                ],
+                                                [
+                                                    'handle' => 'document',
+                                                    'field' => [
+                                                        'mode' => 'list',
+                                                        'container' => 'assets',
+                                                        'restrict' => false,
+                                                        'allow_uploads' => true,
+                                                        'show_filename' => true,
+                                                        'display' => 'Document',
+                                                        'type' => 'assets',
+                                                        'icon' => 'assets',
+                                                        'listable' => 'hidden',
+                                                        'max_items' => 1,
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                    'type' => 'replicator',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->save();
+
+        Collection::make('comments')->save();
+
+        $this->withoutExceptionHandling();
+
+        $this
+            ->post(route('statamic.guest-entries.store'), [
+                '_collection' => 'comments',
+                'title' => 'This is great',
+                'slug' => 'this-is-great',
+                'things' => [
+                    [
+                        'text' => 'Woop die whoop!',
+                    ],
+                    [
+                        'document' => UploadedFile::fake()->create('document.pdf', 100),
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $entry = Entry::all()->last();
+
+        $this->assertNotNull($entry);
+        $this->assertSame($entry->collectionHandle(), 'comments');
+        $this->assertSame($entry->get('title'), 'This is great');
+        $this->assertSame($entry->slug(), 'this-is-great');
+
+        $this->assertIsArray($entry->get('things'));
+        $this->assertCount(2, $entry->get('things'));
+
+        $this->assertIsString($entry->get('things')[0]['text']);
+        $this->assertIsString($entry->get('things')[1]['document']);
+    }
+
+    /** @test */
     public function can_update_entry()
     {
         Collection::make('albums')->save();
