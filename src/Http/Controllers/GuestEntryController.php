@@ -230,6 +230,8 @@ class GuestEntryController extends Controller
         $assetContainer = AssetContainer::findByHandle($field->config()['container']);
 
         $files = [];
+
+        // Handle uploaded files.
         $uploadedFiles = $request->file($key);
 
         if (! is_array($uploadedFiles)) {
@@ -261,6 +263,13 @@ class GuestEntryController extends Controller
 
             // Push to the array
             $files[] = $path;
+        }
+
+        // Handle existing files.
+        $existingFiles = $request->get($key, []);
+
+        foreach ($existingFiles as $existingFile) {
+            $files[] = $existingFile;
         }
 
         if (count($files) === 0) {
