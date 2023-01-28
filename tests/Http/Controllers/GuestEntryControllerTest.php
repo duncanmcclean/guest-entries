@@ -16,7 +16,6 @@ use Statamic\Facades\Blueprint;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
-use Statamic\Stache\Stache;
 
 beforeEach(function () {
     File::deleteDirectory(app('stache')->store('entries')->directory());
@@ -46,7 +45,7 @@ it('can store entry', function () {
     $this->assertSame($entry->slug(), 'this-is-great');
 });
 
-it('can_store_entry_where_slug_is_generated_from_title', function () {
+it('can store entry where slug is generated from title', function () {
     Collection::make('comments')->save();
 
     $this
@@ -64,7 +63,7 @@ it('can_store_entry_where_slug_is_generated_from_title', function () {
     $this->assertSame($entry->slug(), 'this-is-fantastic');
 });
 
-it('can_store_entry_with_custom_form_request', function () {
+it('can store entry with custom form request', function () {
     Collection::make('comments')->save();
 
     $this
@@ -78,7 +77,7 @@ it('can_store_entry_with_custom_form_request', function () {
         ->assertSessionHasErrors('description');
 });
 
-it('cant_store_entry_if_collection_has_not_been_whitelisted', function () {
+it('cant store entry if collection has not been whitelisted', function () {
     Collection::make('smth')->save();
 
     $this
@@ -94,7 +93,7 @@ it('cant_store_entry_if_collection_has_not_been_whitelisted', function () {
     $this->assertNull($entry);
 });
 
-it('can_store_entry_and_user_is_redirected', function () {
+it('can store entry and user is redirected', function () {
     Collection::make('comments')->save();
 
     $this
@@ -114,7 +113,7 @@ it('can_store_entry_and_user_is_redirected', function () {
     $this->assertSame($entry->slug(), 'this-is-great');
 });
 
-it('can_store_entry_and_ensure_ignored_parameters_are_not_saved', function () {
+it('can store entry and ensure ignored parameters are not saved', function () {
     Collection::make('comments')->save();
 
         $this
@@ -139,7 +138,7 @@ it('can_store_entry_and_ensure_ignored_parameters_are_not_saved', function () {
         $this->assertNull($entry->get('_error_redirect'));
 });
 
-it('can_store_entry_and_ensure_updated_at_is_set', function () {
+it('can store entry and ensure updated at is set', function () {
     Collection::make('comments')->save();
 
     $this
@@ -159,7 +158,7 @@ it('can_store_entry_and_ensure_updated_at_is_set', function () {
     $this->assertNotNull($entry->get('updated_at'));
 });
 
-it('can_store_entry_where_collection_is_date_ordered_and_ensure_date_is_saved', function () {
+it('can store entry where collection is date ordered and ensure date is saved', function () {
     TestTime::freeze('Y-m-d H:i', '2021-10-10 11:11');
 
     Collection::make('comments')->dated(true)->save();
@@ -182,7 +181,7 @@ it('can_store_entry_where_collection_is_date_ordered_and_ensure_date_is_saved', 
     $this->assertStringContainsString('2021-10-10-1111.this-is-great.md', $entry->path());
 });
 
-it('can_store_entry_where_collection_is_not_date_ordered_and_ensure_date_is_saved', function () {
+it('can store entry where collection is not date ordered and ensure date is saved', function () {
     TestTime::freeze('Y-m-d H:i', '2021-10-10 11:11');
 
     Blueprint::make('comments')
@@ -251,7 +250,7 @@ it('can_store_entry_where_collection_is_not_date_ordered_and_ensure_date_is_save
     $this->assertStringContainsString('this-is-great.md', $entry->path());
 });
 
-it('can_store_entry_and_ensure_honeypot_works_if_value_is_empty', function () {
+it('can store entry and ensure honeypot works if value is empty', function () {
     Config::set('guest-entries.honeypot', 'postcode');
 
     Collection::make('comments')->save();
@@ -273,7 +272,7 @@ it('can_store_entry_and_ensure_honeypot_works_if_value_is_empty', function () {
     $this->assertSame($entry->slug(), 'this-is-great2');
 });
 
-it('can_store_entry_and_ensure_honeypot_works_if_value_is_not_empty', function () {
+it('can store entry and ensure honeypot works if value is not empty', function () {
     Config::set('guest-entries.honeypot', 'postcode');
 
     Collection::make('comments')->save();
@@ -292,7 +291,7 @@ it('can_store_entry_and_ensure_honeypot_works_if_value_is_not_empty', function (
     $this->assertNull($entry);
 });
 
-it('can_store_entry_and_ensure_entry_is_unpublished_by_default', function () {
+it('can store entry and ensure entry is unpublished by default', function () {
     Collection::make('comments')->save();
 
     $this
@@ -312,7 +311,7 @@ it('can_store_entry_and_ensure_entry_is_unpublished_by_default', function () {
     $this->assertFalse($entry->published());
 });
 
-it('can_store_entry_and_ensure_published_status_is_updated', function () {
+it('can store entry and ensure published status is updated', function () {
     Collection::make('comments')->save();
 
     $this
@@ -333,7 +332,7 @@ it('can_store_entry_and_ensure_published_status_is_updated', function () {
     $this->assertTrue($entry->published());
 });
 
-it('can_store_entry_and_ensure_events_and_dispatched', function () {
+it('can store entry and ensure events and dispatched', function () {
     Event::fake();
 
     Collection::make('comments')->save();
@@ -356,7 +355,7 @@ it('can_store_entry_and_ensure_events_and_dispatched', function () {
     Event::assertDispatchedTimes(GuestEntryCreated::class, 1);
 });
 
-it('can_store_entry_and_date_is_saved_as_part_of_file_name_if_dated_collection', function () {
+it('can store entry and date is saved as part of file name if dated collection', function () {
     Collection::make('comments')->dated(true)->save();
 
     $this
@@ -378,7 +377,7 @@ it('can_store_entry_and_date_is_saved_as_part_of_file_name_if_dated_collection',
     $this->assertStringContainsString('2021-06-06.this-is-great.md', $entry->path());
 });
 
-it('can_store_entry_and_ensure_file_can_be_uploaded', function () {
+it('can store entry and ensure file can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('comments')
@@ -444,7 +443,7 @@ it('can_store_entry_and_ensure_file_can_be_uploaded', function () {
     $this->assertIsString($entry->get('attachment'));
 });
 
-it('can_store_entry_and_ensure_multiple_files_can_be_uploaded', function () {
+it('can store entry and ensure multiple files can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
         Blueprint::make('comments')
@@ -515,7 +514,7 @@ it('can_store_entry_and_ensure_multiple_files_can_be_uploaded', function () {
         $this->assertSame(count($entry->get('attachments')), 2);
 });
 
-it('can_store_entry_and_ensure_date_is_in_same_format_defined_in_blueprint', function () {
+it('can store entry and ensure date is in same format defined in blueprint', function () {
     Blueprint::make('comments')
         ->setNamespace('collections.comments')
         ->setContents([
@@ -582,7 +581,7 @@ it('can_store_entry_and_ensure_date_is_in_same_format_defined_in_blueprint', fun
     $this->assertStringContainsString('this-is-great.md', $entry->path());
 });
 
-it('can_store_entry_and_ensure_created_in_correct_site_by_request_payload', function () {
+it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
 
     Config::set('statamic.sites.sites', [
@@ -620,7 +619,7 @@ it('can_store_entry_and_ensure_created_in_correct_site_by_request_payload', func
     $this->assertSame($entry->locale(), 'one');
 });
 
-it('can_store_entry_and_ensure_created_in_correct_site_by_referer', function () {
+it('can store entry and ensure created in correct site by referer', function () {
     Config::set('statamic.editions.pro', true);
 
     Config::set('statamic.sites.sites', [
@@ -658,7 +657,7 @@ it('can_store_entry_and_ensure_created_in_correct_site_by_referer', function () 
     $this->assertSame($entry->locale(), 'two');
 });
 
-it('can_store_entry_and_ensure_created_in_correct_site_by_current_site_fallback', function () {
+it('can store entry and ensure created in correct site by current site fallback', function () {
     Config::set('statamic.editions.pro', true);
 
     Config::set('statamic.sites.sites', [
@@ -696,7 +695,7 @@ it('can_store_entry_and_ensure_created_in_correct_site_by_current_site_fallback'
     $this->assertSame($entry->locale(), 'two');
 });
 
-it('can_store_entry_and_ensure_entry_is_only_saved_once', function () {
+it('can store entry and ensure entry is only saved once', function () {
     Event::fake();
 
     Collection::make('comments')->save();
@@ -719,7 +718,7 @@ it('can_store_entry_and_ensure_entry_is_only_saved_once', function () {
     Event::assertDispatchedTimes(EntrySaved::class, 1);
 });
 
-it('can_store_entry_with_replicator_field', function () {
+it('can store entry with replicator field', function () {
     Blueprint::make('comments')
         ->setNamespace('collections.comments')
         ->setContents([
@@ -794,7 +793,7 @@ it('can_store_entry_with_replicator_field', function () {
     $this->assertCount(2, $entry->get('things'));
 });
 
-it('can_store_entry_with_replicator_field_and_an_assets_field_inside_the_replicator', function () {
+it('can store entry with replicator field and an assets field inside the replicator', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('comments')
@@ -891,7 +890,7 @@ it('can_store_entry_with_replicator_field_and_an_assets_field_inside_the_replica
     $this->assertIsString($entry->get('things')[1]['document']);
 });
 
-it('can_update_entry', function () {
+it('can update entry', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -921,7 +920,7 @@ it('can_update_entry', function () {
     $this->assertSame($entry->slug(), 'allo-mate');
 });
 
-it('can_update_entry_with_custom_form_request', function () {
+it('can update entry with custom form request', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -945,7 +944,7 @@ it('can_update_entry_with_custom_form_request', function () {
         ->assertSessionHasErrors('record_label');
 });
 
-it('cant_update_entry_if_collection_has_not_been_whitelisted', function () {
+it('cant update entry if collection has not been whitelisted', function () {
     Collection::make('hahahahaha')->save();
 
     Entry::make()
@@ -973,7 +972,7 @@ it('cant_update_entry_if_collection_has_not_been_whitelisted', function () {
     $this->assertSame($entry->slug(), 'smth');
 });
 
-it('can_update_entry_and_user_is_redirected', function () {
+it('can update entry and user is redirected', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -1004,7 +1003,7 @@ it('can_update_entry_and_user_is_redirected', function () {
     $this->assertSame($entry->slug(), 'allo-mate');
 });
 
-it('can_update_entry_and_ensure_required_parameters_are_not_saved', function () {
+it('can update entry and ensure required parameters are notsaved', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -1041,7 +1040,7 @@ it('can_update_entry_and_ensure_required_parameters_are_not_saved', function () 
     $this->assertNull($entry->get('_error_redirect'));
 });
 
-it('can_update_entry_and_ensure_updated_at_is_set', function () {
+it('can update entry and ensure updated at is set', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -1075,7 +1074,7 @@ it('can_update_entry_and_ensure_updated_at_is_set', function () {
     $this->assertNotSame($entry->get('updated_at'), 12345);
 });
 
-it('can_update_entry_and_ensure_published_status_is_updated', function () {
+it('can update entry and ensure published status is updated', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -1107,7 +1106,7 @@ it('can_update_entry_and_ensure_published_status_is_updated', function () {
     $this->assertTrue($entry->published());
 });
 
-it('can_update_entry_and_ensure_events_are_dispatched', function () {
+it('can update entry and ensure events are dispatched', function () {
     Event::fake();
 
     Collection::make('albums')->save();
@@ -1141,7 +1140,7 @@ it('can_update_entry_and_ensure_events_are_dispatched', function () {
     Event::assertDispatchedTimes(GuestEntryUpdated::class, 1);
 });
 
-it('can_update_entry_and_date_is_saved_as_part_of_file_name_if_dated_collection', function () {
+it('can update entry and date is saved as part of file name if dated collection', function () {
     Collection::make('albums')->dated(true)->save();
 
     Entry::make()
@@ -1174,7 +1173,7 @@ it('can_update_entry_and_date_is_saved_as_part_of_file_name_if_dated_collection'
     $this->assertStringContainsString('2021-09-09.allo-mate.md', $entry->path());
 });
 
-it('can_update_entry_and_ensure_date_is_in_same_format_as_defined_in_blueprint', function () {
+it('can update entry and ensure date is in same format as defined in blueprint', function () {
     Blueprint::make('albums')
         ->setNamespace('collections.albums')
         ->setContents([
@@ -1252,7 +1251,7 @@ it('can_update_entry_and_ensure_date_is_in_same_format_as_defined_in_blueprint',
     $this->assertStringContainsString('allo-mate.md', $entry->path());
 });
 
-it('can_update_entry_and_ensure_file_can_be_uploaded', function () {
+it('can update entry and ensure file can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('albums')
@@ -1341,7 +1340,7 @@ it('can_update_entry_and_ensure_file_can_be_uploaded', function () {
     $this->assertIsString($entry->get('attachment'));
 });
 
-it('can_update_entry_and_ensure_multiple_files_can_be_uploaded', function () {
+it('can update entry and ensure multiple files can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('albums')
@@ -1433,7 +1432,7 @@ it('can_update_entry_and_ensure_multiple_files_can_be_uploaded', function () {
     $this->assertSame(count($entry->get('attachments')), 2);
 });
 
-it('can_update_entry_with_revisions_enabled', function () {
+it('can update entry with revisions enabled', function () {
     Config::set('statamic.editions.pro', true);
     Config::set('statamic.revisions.enabled', true);
 
@@ -1479,7 +1478,7 @@ it('can_update_entry_with_revisions_enabled', function () {
     ]);
 });
 
-it('can_update_entry_and_date_and_ensure_date_is_saved_normally_if_not_dated_collection', function () {
+it('can update entry and date and ensure date is saved normally if not dated collection', function () {
     Collection::make('albums')->dated(false)->save();
 
     Entry::make()
@@ -1513,7 +1512,7 @@ it('can_update_entry_and_date_and_ensure_date_is_saved_normally_if_not_dated_col
     $this->assertStringContainsString('allo-mate.md', $entry->path());
 });
 
-it('can_update_entry_and_ensure_entry_is_only_saved_once', function () {
+it('can update entry and ensure entry is only saved once', function () {
     Event::fake();
 
     Collection::make('albums')->save();
@@ -1547,7 +1546,7 @@ it('can_update_entry_and_ensure_entry_is_only_saved_once', function () {
     Event::assertDispatchedTimes(EntrySaved::class, 2);
 });
 
-it('can_update_entry_with_replicator_field', function () {
+it('can update entry with replicator field', function () {
     Blueprint::make('albums')
         ->setNamespace('collections.albums')
         ->setContents([
@@ -1645,7 +1644,7 @@ it('can_update_entry_with_replicator_field', function () {
     $this->assertCount(2, $entry->get('things'));
 });
 
-it('can_update_entry_with_replicator_field_and_an_assets_field_inside_the_replicator', function () {
+it('can update entry with replicator field and an assets field inside the replicator', function () {
     Blueprint::make('albums')
         ->setNamespace('collections.albums')
         ->setContents([
@@ -1761,7 +1760,7 @@ it('can_update_entry_with_replicator_field_and_an_assets_field_inside_the_replic
     $this->assertIsString($entry->get('things')[1]['document']);
 });
 
-it('can_destroy_entry', function () {
+it('can destroy entry', function () {
     Collection::make('albums')->save();
 
         Entry::make()
@@ -1786,7 +1785,7 @@ it('can_destroy_entry', function () {
         $this->assertNull($entry);
 });
 
-it('cant_destroy_entry_if_collection_has_not_been_whitelisted', function () {
+it('cant destroy entry if collection has not been whitelisted', function () {
     Collection::make('blahblah')->save();
 
     Entry::make()
@@ -1810,7 +1809,7 @@ it('cant_destroy_entry_if_collection_has_not_been_whitelisted', function () {
     $this->assertNotNull($entry);
 });
 
-it('can_destroy_entry_if_collection_has_not_been_whitelisted_and_user_is_redirected', function () {
+it('can destroy entry if collection has not been whitelisted and user is redirected', function () {
     Collection::make('albums')->save();
 
     Entry::make()
@@ -1836,7 +1835,7 @@ it('can_destroy_entry_if_collection_has_not_been_whitelisted_and_user_is_redirec
     $this->assertNull($entry);
 });
 
-it('can_destroy_entry_and_ensure_events_are_dispatched', function () {
+it('can destroy entry and ensure events are dispatched', function () {
     Event::fake();
 
     Collection::make('albums')->save();
