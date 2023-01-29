@@ -116,7 +116,7 @@ it('can store entry and user is redirected', function () {
 it('can store entry and ensure ignored parameters are not saved', function () {
     Collection::make('comments')->save();
 
-        $this
+    $this
             ->post(route('statamic.guest-entries.store'), [
                 '_collection' => 'comments',
                 '_redirect' => '/whatever',
@@ -126,16 +126,16 @@ it('can store entry and ensure ignored parameters are not saved', function () {
             ])
             ->assertRedirect();
 
-        $entry = Entry::all()->last();
+    $entry = Entry::all()->last();
 
-        $this->assertNotNull($entry);
-        $this->assertSame($entry->collectionHandle(), 'comments');
-        $this->assertSame($entry->get('title'), 'This is great');
-        $this->assertSame($entry->slug(), 'this-is-great');
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'This is great');
+    $this->assertSame($entry->slug(), 'this-is-great');
 
-        $this->assertNull($entry->get('_collection'));
-        $this->assertNull($entry->get('_redirect'));
-        $this->assertNull($entry->get('_error_redirect'));
+    $this->assertNull($entry->get('_collection'));
+    $this->assertNull($entry->get('_redirect'));
+    $this->assertNull($entry->get('_error_redirect'));
 });
 
 it('can store entry and ensure updated at is set', function () {
@@ -446,7 +446,7 @@ it('can store entry and ensure file can be uploaded', function () {
 it('can store entry and ensure multiple files can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
-        Blueprint::make('comments')
+    Blueprint::make('comments')
             ->setNamespace('collections.comments')
             ->setContents([
                 'title' => 'Comments',
@@ -486,11 +486,11 @@ it('can store entry and ensure multiple files can be uploaded', function () {
             ])
             ->save();
 
-        Collection::make('comments')->save();
+    Collection::make('comments')->save();
 
-        $this->withoutExceptionHandling();
+    $this->withoutExceptionHandling();
 
-        $this
+    $this
             ->post(route('statamic.guest-entries.store'), [
                 '_collection' => 'comments',
                 'title' => 'This is great',
@@ -502,16 +502,16 @@ it('can store entry and ensure multiple files can be uploaded', function () {
             ])
             ->assertRedirect();
 
-        $entry = Entry::all()->last();
+    $entry = Entry::all()->last();
 
-        $this->assertNotNull($entry);
-        $this->assertSame($entry->collectionHandle(), 'comments');
-        $this->assertSame($entry->get('title'), 'This is great');
-        $this->assertSame($entry->slug(), 'this-is-great');
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'This is great');
+    $this->assertSame($entry->slug(), 'this-is-great');
 
-        $this->assertNotNull($entry->get('attachments'));
-        $this->assertIsArray($entry->get('attachments'));
-        $this->assertSame(count($entry->get('attachments')), 2);
+    $this->assertNotNull($entry->get('attachments'));
+    $this->assertIsArray($entry->get('attachments'));
+    $this->assertSame(count($entry->get('attachments')), 2);
 });
 
 it('can store entry and ensure date is in same format defined in blueprint', function () {
@@ -1763,7 +1763,7 @@ it('can update entry with replicator field and an assets field inside the replic
 it('can destroy entry', function () {
     Collection::make('albums')->save();
 
-        Entry::make()
+    Entry::make()
             ->id('allo-mate-idee')
             ->collection('albums')
             ->slug('allo-mate')
@@ -1773,16 +1773,16 @@ it('can destroy entry', function () {
             ])
             ->save();
 
-        $this
+    $this
             ->delete(route('statamic.guest-entries.destroy'), [
                 '_collection' => 'albums',
                 '_id' => 'allo-mate-idee',
             ])
             ->assertRedirect();
 
-        $entry = Entry::find('allo-mate-idee');
+    $entry = Entry::find('allo-mate-idee');
 
-        $this->assertNull($entry);
+    $this->assertNull($entry);
 });
 
 it('cant destroy entry if collection has not been whitelisted', function () {
