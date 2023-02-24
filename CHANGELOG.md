@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v2.1.1 (2023-02-24)
+
+### What's fixed
+
+- Fixed an issue where Asset fields inside Replicators would be wiped when editing entries #41
+
 ## v2.1.0 (2023-01-27)
 
 ### What's new
