@@ -238,6 +238,9 @@ class GuestEntryController extends Controller
             $uploadedFiles = [$uploadedFiles];
         }
 
+        // Filter out any null values.
+        $uploadedFiles = collect($uploadedFiles)->filter()->toArray();
+
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
             $path = '/'.$uploadedFile->storeAs(
