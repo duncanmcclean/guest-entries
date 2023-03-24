@@ -19,15 +19,15 @@ class UpdateRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            '_collection'     => ['required', 'string',
+            '_collection' => ['required', 'string',
                 // new CollectionExists
             ],
-            '_id'             => ['required', 'string',
+            '_id' => ['required', 'string',
                 // new EntryExists
             ],
-            '_redirect'       => ['nullable', 'string'],
+            '_redirect' => ['nullable', 'string'],
             '_error_redirect' => ['nullable', 'string'],
-            '_request'        => ['nullable', 'string'],
+            '_request' => ['nullable', 'string'],
         ];
 
         if ($formRequest = $this->get('_request')) {
