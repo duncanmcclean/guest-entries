@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### What's new
+
+- Guest Entries v3 now supports Statamic 4 #43
+
+### Upgrade guide
+
+1. In your site's `composer.json` file, replace `doublethreedigital/guest-entries` with `duncanmcclean/guest-entries`
+2. Then, change the addon's version constraint to `^3.0`
+3. If you have any references to `DoubleThreeDigital` within your site in relation to this addon, replace it with `DuncanMcClean`
+
 ## v2.1.1 (2023-02-24)
 
 ### What's fixed
