@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Tags;
+namespace DuncanMcClean\GuestEntries\Tags;
 
 use Illuminate\Container\EntryNotFoundException;
 use Statamic\Exceptions\CollectionNotFoundException;

@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Tests\Fixtures;
+namespace DuncanMcClean\GuestEntries\Tests\Fixtures;
 
 use Illuminate\Foundation\Http\FormRequest;
 

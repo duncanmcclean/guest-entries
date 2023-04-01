@@ -1,15 +1,15 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Http\Controllers;
+namespace DuncanMcClean\GuestEntries\Http\Controllers;
 
 use Carbon\Carbon;
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
-use DoubleThreeDigital\GuestEntries\Exceptions\AssetContainerNotSpecified;
-use DoubleThreeDigital\GuestEntries\Http\Requests\DestroyRequest;
-use DoubleThreeDigital\GuestEntries\Http\Requests\StoreRequest;
-use DoubleThreeDigital\GuestEntries\Http\Requests\UpdateRequest;
+use DuncanMcClean\GuestEntries\Events\GuestEntryCreated;
+use DuncanMcClean\GuestEntries\Events\GuestEntryDeleted;
+use DuncanMcClean\GuestEntries\Events\GuestEntryUpdated;
+use DuncanMcClean\GuestEntries\Exceptions\AssetContainerNotSpecified;
+use DuncanMcClean\GuestEntries\Http\Requests\DestroyRequest;
+use DuncanMcClean\GuestEntries\Http\Requests\StoreRequest;
+use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;

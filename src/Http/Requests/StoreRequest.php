@@ -1,8 +1,8 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Http\Requests;
+namespace DuncanMcClean\GuestEntries\Http\Requests;
 
-use DoubleThreeDigital\GuestEntries\Rules\CollectionExists;
+use DuncanMcClean\GuestEntries\Rules\CollectionExists;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRequest extends FormRequest

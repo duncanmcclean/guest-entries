@@ -1,8 +1,8 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Tests;
+namespace DuncanMcClean\GuestEntries\Tests;
 
-use DoubleThreeDigital\GuestEntries\ServiceProvider;
+use DuncanMcClean\GuestEntries\ServiceProvider;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 use Statamic\Extend\Manifest;
 use Statamic\Providers\StatamicServiceProvider;
@@ -30,9 +30,9 @@ abstract class TestCase extends OrchestraTestCase
         parent::getEnvironmentSetUp($app);
 
         $app->make(Manifest::class)->manifest = [
-            'doublethreedigital/guest-entries' => [
-                'id' => 'doublethreedigital/guest-entries',
-                'namespace' => 'DoubleThreeDigital\\GuestEntries',
+            'duncanmcclean/guest-entries' => [
+                'id' => 'duncanmcclean/guest-entries',
+                'namespace' => 'DuncanMcClean\\GuestEntries',
             ],
         ];
     }
