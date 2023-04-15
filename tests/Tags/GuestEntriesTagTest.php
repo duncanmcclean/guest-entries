@@ -1,6 +1,6 @@
 <?php
 
-use DoubleThreeDigital\GuestEntries\Tags\GuestEntriesTag;
+use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
 use function PHPUnit\Framework\assertStringContainsString;
 use Statamic\Exceptions\CollectionNotFoundException;

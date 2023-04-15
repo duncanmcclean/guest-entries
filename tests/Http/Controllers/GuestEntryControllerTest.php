@@ -1,10 +1,10 @@
 <?php
 
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated;
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted;
-use DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated;
-use DoubleThreeDigital\GuestEntries\Tests\Fixtures\FirstCustomStoreRequest;
-use DoubleThreeDigital\GuestEntries\Tests\Fixtures\FirstCustomUpdateRequest;
+use DuncanMcClean\GuestEntries\Events\GuestEntryCreated;
+use DuncanMcClean\GuestEntries\Events\GuestEntryDeleted;
+use DuncanMcClean\GuestEntries\Events\GuestEntryUpdated;
+use DuncanMcClean\GuestEntries\Tests\Fixtures\FirstCustomStoreRequest;
+use DuncanMcClean\GuestEntries\Tests\Fixtures\FirstCustomUpdateRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;

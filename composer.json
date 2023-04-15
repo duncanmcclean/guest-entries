@@ -1,15 +1,15 @@
 {
-    "name": "doublethreedigital/guest-entries",
+    "name": "duncanmcclean/guest-entries",
     "description": "Perform CRUD operations in the front-end of your site.",
     "license": "proprietary",
     "autoload": {
         "psr-4": {
-            "DoubleThreeDigital\\GuestEntries\\": "src"
+            "DuncanMcClean\\GuestEntries\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "DoubleThreeDigital\\GuestEntries\\Tests\\": "tests"
+            "DuncanMcClean\\GuestEntries\\Tests\\": "tests"
         }
     },
     "extra": {
@@ -19,13 +19,13 @@
         },
         "laravel": {
             "providers": [
-                "DoubleThreeDigital\\GuestEntries\\ServiceProvider"
+                "DuncanMcClean\\GuestEntries\\ServiceProvider"
             ]
         }
     },
     "require": {
-        "php": "^8.1",
-        "statamic/cms": "3.3.* || 3.4.*"
+        "php": "^8.2",
+        "statamic/cms": "^4.0"
     },
     "require-dev": {
         "nunomaduro/collision": "^6.1",
@@ -51,5 +51,5 @@
             "pestphp/pest-plugin": true
         }
     },
-    "minimum-stability": "beta"
+    "minimum-stability": "alpha"
 }

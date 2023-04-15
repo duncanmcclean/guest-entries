@@ -6,7 +6,7 @@ If you need to trigger any custom code when a user does anything with Guest Entr
 
 ### GuestEntryCreated
 
-[`DoubleThreeDigital\GuestEntries\Events\GuestEntryCreated`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryCreated.php)
+[`DuncanMcClean\GuestEntries\Events\GuestEntryCreated`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryCreated.php)
 
 This event is fired whenever an entry is created via `{{ guest-entries:create }}`.
 
@@ -19,7 +19,7 @@ public function handle(GuestEntryCreated $event)
 
 ### GuestEntryUpdated
 
-[`DoubleThreeDigital\GuestEntries\Events\GuestEntryUpdated`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryUpdated.php)
+[`DuncanMcClean\GuestEntries\Events\GuestEntryUpdated`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryUpdated.php)
 
 This event is fired whenever an entry is updated via `{{ guest-entries:update }}`.
 
@@ -32,7 +32,7 @@ public function handle(GuestEntryUpdated $event)
 
 ### GuestEntryDeleted
 
-[`DoubleThreeDigital\GuestEntries\Events\GuestEntryDeleted`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryDeleted.php)
+[`DuncanMcClean\GuestEntries\Events\GuestEntryDeleted`](https://github.com/duncanmcclean/guest-entries/blob/main/src/Events/GuestEntryDeleted.php)
 
 This event is fired whenever an entry is updated via `{{ guest-entries:delete }}`.
 

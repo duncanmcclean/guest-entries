@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Tags\Concerns;
+namespace DuncanMcClean\GuestEntries\Tags\Concerns;
 
 use Statamic\Tags\Concerns\RendersForms;
 

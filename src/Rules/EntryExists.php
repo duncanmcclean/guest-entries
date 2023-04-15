@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Rules;
+namespace DuncanMcClean\GuestEntries\Rules;
 
 use Illuminate\Validation\Rule;
 use Statamic\Facades\Entry;

@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Events;
+namespace DuncanMcClean\GuestEntries\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;

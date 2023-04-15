@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries;
+namespace DuncanMcClean\GuestEntries;
 
 use Statamic\Providers\AddonServiceProvider;
 
