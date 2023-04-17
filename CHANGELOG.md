@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v2.1.2 (2023-04-17)
+
+### What's improved
+
+- There's now a `success` item flashed into the user's session after a successful form submission #45 #47
+
 ## v2.1.1 (2023-02-24)
 
 ### What's fixed
