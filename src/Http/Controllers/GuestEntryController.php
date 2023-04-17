@@ -74,7 +74,9 @@ class GuestEntryController extends Controller
 
         event(new GuestEntryCreated($entry));
 
-        return $this->withSuccess($request);
+        return $this->withSuccess($request, [
+            'success' => true,
+        ]);
     }
 
     public function update(UpdateRequest $request)
@@ -147,7 +149,9 @@ class GuestEntryController extends Controller
 
         event(new GuestEntryUpdated($entry));
 
-        return $this->withSuccess($request);
+        return $this->withSuccess($request, [
+            'success' => true,
+        ]);
     }
 
     public function destroy(DestroyRequest $request)
@@ -162,7 +166,9 @@ class GuestEntryController extends Controller
 
         event(new GuestEntryDeleted($entry));
 
-        return $this->withSuccess($request);
+        return $this->withSuccess($request, [
+            'success' => true,
+        ]);
     }
 
     protected function processField(Field $field, $key, $value, $request): mixed
