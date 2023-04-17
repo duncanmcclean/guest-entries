@@ -12,6 +12,12 @@
 2. Then, change the addon's version constraint to `^3.0`
 3. If you have any references to `DoubleThreeDigital` within your site in relation to this addon, replace it with `DuncanMcClean`
 
+## v2.1.2 (2023-04-17)
+
+### What's improved
+
+- There's now a `success` item flashed into the user's session after a successful form submission #45 #47
+
 ## v2.1.1 (2023-02-24)
 
 ### What's fixed
