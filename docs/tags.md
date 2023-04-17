@@ -103,3 +103,13 @@ If you'd like to show any errors after a user has submitted the Guest Entries fo
     <li>{{ value }}</li>
 {{ /guest-entries:errors }}
 ```
+
+### Success
+
+If you'd like to show a success message after a user has submitted a Guest entry, you can test for the session success key. 
+
+```antlers
+{{ if {session:has key="success"} }}
+    Well done buddy!
+{{ /if }}
+```
