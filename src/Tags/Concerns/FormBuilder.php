@@ -26,6 +26,10 @@ trait FormBuilder
             $html .= $this->redirectField();
         }
 
+        if ($this->params->get('error_redirect') != null) {
+            $html .= $this->errorRedirectField();
+        }
+
         if ($this->params->get('request') != null) {
             $html .= $this->requestField();
         }
@@ -59,6 +63,11 @@ trait FormBuilder
     private function redirectField()
     {
         return '<input type="hidden" name="_redirect" value="'.$this->params->get('redirect').'" />';
+    }
+
+    private function errorRedirectField()
+    {
+        return '<input type="hidden" name="_error_redirect" value="'.$this->params->get('error_redirect').'" />';
     }
 
     private function requestField()
