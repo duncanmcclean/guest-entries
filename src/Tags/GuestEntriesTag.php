@@ -97,4 +97,9 @@ class GuestEntriesTag extends Tags
     {
         return session()->has('errors');
     }
+
+    public function success(): bool
+    {
+        return session()->get('guest-entries.success', false);
+    }
 }
