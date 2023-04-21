@@ -82,8 +82,8 @@ trait FormBuilder
                 return $params[$param] = $redirect;
             }
         })->filter()
-        ->values()
-        ->all();
+            ->values()
+            ->all();
     }
 
     /**

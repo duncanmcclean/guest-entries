@@ -119,14 +119,14 @@ it('can store entry and ensure ignored parameters are not saved', function () {
     Collection::make('comments')->save();
 
     $this
-            ->post(route('statamic.guest-entries.store'), [
-                '_collection' => 'comments',
-                '_redirect' => '/whatever',
-                '_error_redirect' => '/whatever-else',
-                'title' => 'This is great',
-                'slug' => 'this-is-great',
-            ])
-            ->assertRedirect();
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_redirect' => '/whatever',
+            '_error_redirect' => '/whatever-else',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -449,60 +449,60 @@ it('can store entry and ensure multiple files can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('comments')
-            ->setNamespace('collections.comments')
-            ->setContents([
-                'title' => 'Comments',
-                'sections' => [
-                    'main' => [
-                        'display' => 'main',
-                        'fields' => [
-                            [
-                                'handle' => 'title',
-                                'field' => [
-                                    'type' => 'text',
-                                ],
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
                             ],
-                            [
-                                'handle' => 'slug',
-                                'field' => [
-                                    'type' => 'slug',
-                                ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
                             ],
-                            [
-                                'handle' => 'attachments',
-                                'field' => [
-                                    'mode' => 'list',
-                                    'container' => 'assets',
-                                    'restrict' => false,
-                                    'allow_uploads' => true,
-                                    'show_filename' => true,
-                                    'display' => 'Attachment',
-                                    'type' => 'assets',
-                                    'icon' => 'assets',
-                                    'listable' => 'hidden',
-                                ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
                             ],
                         ],
                     ],
                 ],
-            ])
-            ->save();
+            ],
+        ])
+        ->save();
 
     Collection::make('comments')->save();
 
     $this->withoutExceptionHandling();
 
     $this
-            ->post(route('statamic.guest-entries.store'), [
-                '_collection' => 'comments',
-                'title' => 'This is great',
-                'slug' => 'this-is-great',
-                'attachments' => [
-                    UploadedFile::fake()->create('foobar.png'),
-                    UploadedFile::fake()->create('barfoo.jpg'),
-                ],
-            ])
-            ->assertRedirect();
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachments' => [
+                UploadedFile::fake()->create('foobar.png'),
+                UploadedFile::fake()->create('barfoo.jpg'),
+            ],
+        ])
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -1940,14 +1940,14 @@ it('can destroy entry', function () {
     Collection::make('albums')->save();
 
     Entry::make()
-            ->id('allo-mate-idee')
-            ->collection('albums')
-            ->slug('allo-mate')
-            ->data([
-                'title' => 'Allo Mate!',
-                'artist' => 'Guvna B',
-            ])
-            ->save();
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
