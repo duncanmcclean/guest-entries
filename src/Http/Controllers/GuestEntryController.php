@@ -341,18 +341,4 @@ class GuestEntryController extends Controller
             redirect($request->_redirect)->with($data)
             : back()->with($data);
     }
-
-    protected function withErrors(Request $request, string $errorMessage)
-    {
-        if ($request->wantsJson()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $errorMessage,
-            ]);
-        }
-
-        return $request->_error_redirect
-            ? redirect($request->_error_redirect)->withErrors($errorMessage, 'guest-entries')
-            : back()->withErrors($errorMessage, 'guest-entries');
-    }
 }
