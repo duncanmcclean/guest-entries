@@ -1998,11 +1998,11 @@ it('can destroy entry', function () {
         ->save();
 
     $this
-            ->delete(route('statamic.guest-entries.destroy'), [
-                '_collection' => 'albums',
-                '_id' => 'allo-mate-idee',
-            ])
-            ->assertRedirect();
+        ->delete(route('statamic.guest-entries.destroy'), [
+            '_collection' => 'albums',
+            '_id' => 'allo-mate-idee',
+        ])
+        ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 
