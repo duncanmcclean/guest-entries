@@ -333,6 +333,8 @@ class GuestEntryController extends Controller
             return response()->json($data);
         }
 
+        $request->session()->put('guest-entries.success', true);
+
         return $request->_redirect ?
             redirect($request->_redirect)->with($data)
             : back()->with($data);
