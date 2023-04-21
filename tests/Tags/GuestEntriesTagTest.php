@@ -81,6 +81,24 @@ it('throws an exception when attempting to return create guest entry form when c
     $usage = $tag->create();
 })->throws(CollectionNotFoundException::class);
 
+it('returns create guest entry form with redirect and error_redirect hidden inputs', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'redirect' => '/thank-you',
+        'error_redirect' => '/error',
+    ]);
+
+    $usage = $tag->create();
+
+    assertStringContainsString('http://localhost/!/guest-entries/create', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
+    assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
+});
+
 it('returns update guest entry form', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
@@ -263,6 +281,33 @@ it('returns update guest entry form and entry values can be used', function () u
     assertStringContainsString('<textarea name="comment">Something can go here</textarea>', $usage);
 });
 
+it('returns update guest entry form with redirect and error_redirect hidden inputs', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+        'redirect' => '/thank-you',
+        'error_redirect' => '/error',
+    ]);
+
+    $usage = $tag->update();
+
+    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
+    assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
+});
+
 it('returns delete guest entry form', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
@@ -419,4 +464,31 @@ it('returns delete guest entry form and entry values can be used', function () u
 
     assertStringContainsString('<h2>Delete Guestbook Entry: Hello World</h2>', $usage);
     assertStringContainsString('<button type="submit">DELETE</button>', $usage);
+});
+
+it('returns delete guest entry form with redirect and error_redirect hidden inputs', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->slug('hello')
+        ->data(['title' => 'Hello World'])
+        ->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'id' => 'hello',
+        'redirect' => '/thank-you',
+        'error_redirect' => '/error',
+    ]);
+
+    $usage = $tag->delete();
+
+    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('<input type="hidden" name="_token"', $usage);
+    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
+    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
+    assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
 });

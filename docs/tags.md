@@ -106,10 +106,10 @@ If you'd like to show any errors after a user has submitted the Guest Entries fo
 
 ### Success
 
-If you'd like to show a success message after a user has submitted a Guest entry, you can test for the session success key. 
+If you'd like to show a success message after a user has submitted the Guest Entries form, you can use the `{{ guest-entries:success }}` tag, like shown below:
 
 ```antlers
-{{ if {session:has key="success"} }}
+{{ if {guest-entries:success} }}
     Well done buddy!
 {{ /if }}
 ```

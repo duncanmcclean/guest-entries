@@ -36,8 +36,7 @@ it('can store entry', function () {
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -63,6 +62,24 @@ it('can store entry where slug is generated from title', function () {
     $this->assertSame($entry->collectionHandle(), 'comments');
     $this->assertSame($entry->get('title'), 'This is fantastic');
     $this->assertSame($entry->slug(), 'this-is-fantastic');
+});
+
+it('can store entry when collection has title format', function () {
+    Collection::make('comments')->titleFormats(['default' => 'BLAH {{ name }}'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            'name' => 'So, I was sitting there and somebody came up to me and I asked them something.',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'BLAH So, I was sitting there and somebody came up to me and I asked them something.');
+    $this->assertSame($entry->slug(), 'blah-so-i-was-sitting-there-and-somebody-came-up-to-me-and-i-asked-them-something');
 });
 
 it('can store entry with custom form request', function () {
@@ -119,14 +136,14 @@ it('can store entry and ensure ignored parameters are not saved', function () {
     Collection::make('comments')->save();
 
     $this
-            ->post(route('statamic.guest-entries.store'), [
-                '_collection' => 'comments',
-                '_redirect' => '/whatever',
-                '_error_redirect' => '/whatever-else',
-                'title' => 'This is great',
-                'slug' => 'this-is-great',
-            ])
-            ->assertRedirect();
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_redirect' => '/whatever',
+            '_error_redirect' => '/whatever-else',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -449,60 +466,60 @@ it('can store entry and ensure multiple files can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('comments')
-            ->setNamespace('collections.comments')
-            ->setContents([
-                'title' => 'Comments',
-                'sections' => [
-                    'main' => [
-                        'display' => 'main',
-                        'fields' => [
-                            [
-                                'handle' => 'title',
-                                'field' => [
-                                    'type' => 'text',
-                                ],
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
                             ],
-                            [
-                                'handle' => 'slug',
-                                'field' => [
-                                    'type' => 'slug',
-                                ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
                             ],
-                            [
-                                'handle' => 'attachments',
-                                'field' => [
-                                    'mode' => 'list',
-                                    'container' => 'assets',
-                                    'restrict' => false,
-                                    'allow_uploads' => true,
-                                    'show_filename' => true,
-                                    'display' => 'Attachment',
-                                    'type' => 'assets',
-                                    'icon' => 'assets',
-                                    'listable' => 'hidden',
-                                ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
                             ],
                         ],
                     ],
                 ],
-            ])
-            ->save();
+            ],
+        ])
+        ->save();
 
     Collection::make('comments')->save();
 
     $this->withoutExceptionHandling();
 
     $this
-            ->post(route('statamic.guest-entries.store'), [
-                '_collection' => 'comments',
-                'title' => 'This is great',
-                'slug' => 'this-is-great',
-                'attachments' => [
-                    UploadedFile::fake()->create('foobar.png'),
-                    UploadedFile::fake()->create('barfoo.jpg'),
-                ],
-            ])
-            ->assertRedirect();
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachments' => [
+                UploadedFile::fake()->create('foobar.png'),
+                UploadedFile::fake()->create('barfoo.jpg'),
+            ],
+        ])
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -987,8 +1004,7 @@ it('can update entry', function () {
             '_id' => 'allo-mate-idee',
             'record_label' => 'Unknown',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 
@@ -997,6 +1013,36 @@ it('can update entry', function () {
     $this->assertSame($entry->get('title'), 'Allo Mate!');
     $this->assertSame($entry->get('record_label'), 'Unknown');
     $this->assertSame($entry->slug(), 'allo-mate');
+});
+
+it('can update entry if collection has title format', function () {
+    Collection::make('albums')->titleFormats(['default' => '{{ artist }} - {{ name }}'])->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Guvna B - Allo Mate!',
+            'name' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => 'albums',
+            '_id' => 'allo-mate-idee',
+            'record_label' => 'Unknown',
+            'name' => 'Allo Mate',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Guvna B - Allo Mate');
 });
 
 it('can update entry with custom form request', function () {
@@ -1940,22 +1986,21 @@ it('can destroy entry', function () {
     Collection::make('albums')->save();
 
     Entry::make()
-            ->id('allo-mate-idee')
-            ->collection('albums')
-            ->slug('allo-mate')
-            ->data([
-                'title' => 'Allo Mate!',
-                'artist' => 'Guvna B',
-            ])
-            ->save();
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
             '_collection' => 'albums',
             '_id' => 'allo-mate-idee',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 

@@ -12,6 +12,21 @@
 2. Then, change the addon's version constraint to `^3.0`
 3. If you have any references to `DoubleThreeDigital` within your site in relation to this addon, replace it with `DuncanMcClean`
 
+## v2.1.3 (2023-04-21)
+
+### What's new
+
+- Added `{{ guest-entries:success }}` tag #53 #48
+
+### What's fixed
+
+- Fixed `error_redirect` parameter #51 #49
+- Fixed an issue when using title formats on collections #52 #50
+
+### Breaking changes
+
+The `success` key added in the last release has been reverted, in favour of the new `{{ guest-entries:success }}` tag. Apologies for any inconvenience.
+
 ## v2.1.2 (2023-04-17)
 
 ### What's improved
