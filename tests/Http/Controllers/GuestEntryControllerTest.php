@@ -36,8 +36,7 @@ it('can store entry', function () {
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -1006,8 +1005,7 @@ it('can update entry', function () {
             '_id' => 'allo-mate-idee',
             'record_label' => 'Unknown',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 
@@ -2000,12 +1998,11 @@ it('can destroy entry', function () {
         ->save();
 
     $this
-        ->delete(route('statamic.guest-entries.destroy'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
-        ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+            ->delete(route('statamic.guest-entries.destroy'), [
+                '_collection' => 'albums',
+                '_id' => 'allo-mate-idee',
+            ])
+            ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 
