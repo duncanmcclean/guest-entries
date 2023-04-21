@@ -65,6 +65,25 @@ it('can store entry where slug is generated from title', function () {
     $this->assertSame($entry->slug(), 'this-is-fantastic');
 });
 
+it('can store entry when collection has title format', function () {
+    Collection::make('comments')->titleFormats(['default' => 'BLAH {{ name }}'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            'name' => 'So, I was sitting there and somebody came up to me and I asked them something.',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'BLAH So, I was sitting there and somebody came up to me and I asked them something.');
+    $this->assertSame($entry->slug(), 'blah-so-i-was-sitting-there-and-somebody-came-up-to-me-and-i-asked-them-something');
+});
+
 it('can store entry with custom form request', function () {
     Collection::make('comments')->save();
 
@@ -997,6 +1016,37 @@ it('can update entry', function () {
     $this->assertSame($entry->get('title'), 'Allo Mate!');
     $this->assertSame($entry->get('record_label'), 'Unknown');
     $this->assertSame($entry->slug(), 'allo-mate');
+});
+
+it('can update entry if collection has title format', function () {
+    Collection::make('albums')->titleFormats(['default' => '{{ artist }} - {{ name }}'])->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Guvna B - Allo Mate!',
+            'name' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => 'albums',
+            '_id' => 'allo-mate-idee',
+            'record_label' => 'Unknown',
+            'name' => 'Allo Mate',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Guvna B - Allo Mate');
 });
 
 it('can update entry with custom form request', function () {
