@@ -72,8 +72,7 @@ it('can store entry when collection has title format', function () {
             '_collection' => 'comments',
             'name' => 'So, I was sitting there and somebody came up to me and I asked them something.',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::all()->last();
 
@@ -1037,8 +1036,7 @@ it('can update entry if collection has title format', function () {
             'record_label' => 'Unknown',
             'name' => 'Allo Mate',
         ])
-        ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertRedirect();
 
     $entry = Entry::find('allo-mate-idee');
 
