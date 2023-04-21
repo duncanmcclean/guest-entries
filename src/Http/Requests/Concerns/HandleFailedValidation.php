@@ -1,6 +1,6 @@
 <?php
 
-namespace DoubleThreeDigital\GuestEntries\Http\Requests\Concerns;
+namespace DuncanMcClean\GuestEntries\Http\Requests\Concerns;
 
 trait HandleFailedValidation
 {
