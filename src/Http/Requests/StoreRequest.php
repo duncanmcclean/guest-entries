@@ -4,6 +4,7 @@ namespace DoubleThreeDigital\GuestEntries\Http\Requests;
 
 use DoubleThreeDigital\GuestEntries\Rules\CollectionExists;
 use Illuminate\Foundation\Http\FormRequest;
+use Statamic\Facades\Collection;
 
 class StoreRequest extends FormRequest
 {
@@ -25,7 +26,11 @@ class StoreRequest extends FormRequest
             '_redirect' => ['nullable', 'string'],
             '_error_redirect' => ['nullable', 'string'],
             '_request' => ['nullable', 'string'],
-            'slug' => ['required_without:title'],
+            'slug' => [
+                Collection::find($this->get('_collection'))->autoGeneratesTitles()
+                    ? null
+                    : 'required_without:title',
+            ],
         ];
 
         if ($formRequest = $this->get('_request')) {
