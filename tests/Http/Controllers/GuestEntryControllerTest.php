@@ -197,7 +197,7 @@ it('can store entry where collection is date ordered and ensure date is saved', 
     $this->assertSame($entry->get('title'), 'This is great');
     $this->assertSame($entry->slug(), 'this-is-great');
 
-    $this->assertStringContainsString('2021-10-10.this-is-great.md', $entry->path());
+    $this->assertStringContainsString('2021-10-10-1111.this-is-great.md', $entry->path());
 });
 
 it('can store entry where collection is not date ordered and ensure date is saved', function () {
