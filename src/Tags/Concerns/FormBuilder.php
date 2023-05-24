@@ -8,10 +8,31 @@ trait FormBuilder
 {
     use RendersForms;
 
-    private static $knownParams = ['collection', 'id', 'redirect', 'error_redirect', 'request'];
+    protected static $knownParams = ['collection', 'id', 'redirect', 'error_redirect', 'request'];
 
-    protected function createForm(string $action, array $data = [], string $method = 'POST'): string
+    protected function createForm(string $action, array $data = [], string $method = 'POST', array $knownParams = []): string|array
     {
+        $knownParams = array_merge(static::$knownParams, $knownParams);
+
+        if (! $this->parser) {
+            $attrs = $this->formAttrs($action, $method, $knownParams);
+
+            $params = $this->formParams($method, [
+                'redirect' => $this->redirectValue(),
+                'error_redirect' => $this->errorRedirectValue(),
+                'request' => $this->requestValue(),
+                'collection' => $this->collectionValue(),
+                'id' => $this->idValue(),
+            ]);
+
+            return array_merge([
+                'attrs' => $attrs,
+                'attrs_html' => $this->renderAttributes($attrs),
+                'params' => $this->formMetaPrefix($params),
+                'params_html' => $this->formMetaFields($params),
+            ], $data);
+        }
+
         $html = $this->formOpen($action, $method, static::$knownParams);
 
         if ($this->params->get('collection') !== null) {
@@ -50,32 +71,57 @@ trait FormBuilder
         return $data;
     }
 
-    private function collectionField()
+    protected function collectionValue()
     {
-        return '<input type="hidden" name="_collection" value="'.$this->params->get('collection').'" />';
+        return $this->params->get('collection');
     }
 
-    private function idField()
+    protected function idValue()
     {
-        return '<input type="hidden" name="_id" value="'.$this->params->get('id').'" />';
+        return $this->params->get('id');
     }
 
-    private function redirectField()
+    protected function redirectValue()
     {
-        return '<input type="hidden" name="_redirect" value="'.$this->params->get('redirect').'" />';
+        return $this->params->get('redirect');
     }
 
-    private function errorRedirectField()
+    protected function errorRedirectValue()
     {
-        return '<input type="hidden" name="_error_redirect" value="'.$this->params->get('error_redirect').'" />';
+        return $this->params->get('error_redirect');
     }
 
-    private function requestField()
+    protected function requestValue()
     {
-        return '<input type="hidden" name="_request" value="'.$this->params->get('request').'" />';
+        return $this->params->get('request');
     }
 
-    private function params(): array
+    protected function collectionField()
+    {
+        return '<input type="hidden" name="_collection" value="'.$this->collectionValue().'" />';
+    }
+
+    protected function idField()
+    {
+        return '<input type="hidden" name="_id" value="'.$this->idValue().'" />';
+    }
+
+    protected function redirectField()
+    {
+        return '<input type="hidden" name="_redirect" value="'.$this->redirectValue().'" />';
+    }
+
+    protected function errorRedirectField()
+    {
+        return '<input type="hidden" name="_error_redirect" value="'.$this->errorRedirectValue().'" />';
+    }
+
+    protected function requestField()
+    {
+        return '<input type="hidden" name="_request" value="'.$this->requestValue().'" />';
+    }
+
+    protected function params(): array
     {
         return collect(static::$knownParams)->map(function ($param, $ignore) {
             if ($redirect = $this->get($param)) {
@@ -109,7 +155,7 @@ trait FormBuilder
     /**
      * Does this form have errors?
      */
-    private function hasErrors(): bool
+    protected function hasErrors(): bool
     {
         return (session()->has('errors'))
             ? session('errors')->hasBag('guest-entries')
@@ -121,7 +167,7 @@ trait FormBuilder
      *
      * @return object
      */
-    private function getErrorBag()
+    protected function getErrorBag()
     {
         if ($this->hasErrors()) {
             return session('errors')->getBag('guest-entries');
