@@ -2,7 +2,7 @@
 title: Tags
 ---
 
-### Create Entry
+## Create Entry
 
 ```antlers
 {{ guest-entries:create collection="articles" }}
@@ -15,7 +15,7 @@ title: Tags
 {{ /guest-entries:create }}
 ```
 
-### Update Entry
+## Update Entry
 
 ```antlers
 {{ guest-entries:update collection="articles" id="article-id" }}
@@ -28,7 +28,7 @@ title: Tags
 {{ /guest-entries:update }}
 ```
 
-### Delete Entry
+## Delete Entry
 
 ```antlers
 {{ guest-entries:delete collection="articles" id="article-id" }}
@@ -39,7 +39,7 @@ title: Tags
 {{ /guest-entries:delete }}
 ```
 
-### Parameters
+## Parameters
 
 When using any of the `guest-entries` tags, there's a few parameters available to you:
 
@@ -63,7 +63,7 @@ You may specify a URL to redirect the user to once the Guest Entry form has been
 
 You may specify a Laravel Form Request to be used for validation of the form. You can pass in simply the name of the class or the FQNS (fully qualified namespace) - eg. `ArticleStoreRequest` vs `App\Http\Requests\ArticleStoreRequest`
 
-### Special Inputs
+## Special Inputs
 
 There's a few 'special' input fields that you can take advantage of:
 
@@ -81,7 +81,7 @@ Pretty self-explanatory. Allows you to control the publish state of the created 
 
 When not provided, the entry will be set to unpublished.
 
-### Variables
+## Variables
 
 If you're using the update/delete forms provided by Guest Entries, you will be able to use any of your entries data, in case you wish to fill `value` attributes on the input fields.
 
@@ -94,7 +94,7 @@ If you're using the update/delete forms provided by Guest Entries, you will be a
 {{ /guest-entries:update }}
 ```
 
-### Errors
+## Errors
 
 If you'd like to show any errors after a user has submitted the Guest Entries form, you can use the `{{ guest-entries:errors }}` tag, like shown below:
 
@@ -104,7 +104,7 @@ If you'd like to show any errors after a user has submitted the Guest Entries fo
 {{ /guest-entries:errors }}
 ```
 
-### Success
+## Success
 
 If you'd like to show a success message after a user has submitted the Guest Entries form, you can use the `{{ guest-entries:success }}` tag, like shown below:
 
@@ -113,3 +113,28 @@ If you'd like to show a success message after a user has submitted the Guest Ent
     Well done buddy!
 {{ /if }}
 ```
+
+## Using with Blade
+
+You can still use the tags provided by Guest Entries in Blade. However, they'll work slightly differently. Instead of Guest Entries constructing the HTML of the `<form>` for you, you need to construct the HTML yourself.
+
+Thankfully, it's an easy process:
+
+```blade
+@php
+$form = Statamic::tag('guest-entries:update')->params([
+    'collection' => 'articles',
+    'id' => 'id-of-entry',
+])->fetch();
+@endphp
+
+<form {!! $form['attrs_html'] !!}>
+    {!! $form['params_html'] !!}
+    <input type="text" name="description" />
+    <button>Update article</button>
+</form>
+```
+
+The above example uses the `{{ guest-entries:update }}` form. You simply use the `{!! $form['attrs_html'] !!}` in the `<form>` tag (this adds the `action` and `method` attributes). Then, somewhere inside the form, add the hidden parameters with `{!! $form['params_html'] !!}`.
+
+Make sure to pass in any required parameters in the `->params([])` array.
