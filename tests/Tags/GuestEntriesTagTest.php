@@ -2,6 +2,8 @@
 
 use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
+use Illuminate\Support\Facades\Config;
+
 use function PHPUnit\Framework\assertStringContainsString;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
@@ -13,6 +15,8 @@ use Statamic\Tags\Tags;
 $tag = null;
 
 beforeEach(function () use (&$tag) {
+    Config::set('guest-entries.disable_form_parameter_validation', true);
+
     /** @var Tags */
     $tag = resolve(GuestEntriesTag::class)
         ->setParser(Antlers::parser())

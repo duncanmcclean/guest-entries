@@ -32,7 +32,7 @@ it('can store entry', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -51,7 +51,7 @@ it('can store entry where slug is generated from title', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is fantastic',
         ])
         ->assertRedirect();
@@ -69,7 +69,7 @@ it('can store entry when collection has title format', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'name' => 'So, I was sitting there and somebody came up to me and I asked them something.',
         ])
         ->assertRedirect();
@@ -87,8 +87,8 @@ it('can store entry with custom form request', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
-            '_request' => FirstCustomStoreRequest::class,
+            '_collection' => encrypt('comments'),
+            '_request' => encrypt(FirstCustomStoreRequest::class),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -101,7 +101,7 @@ it('cant store entry if collection has not been whitelisted', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'smth',
+            '_collection' => encrypt('smth'),
             'title' => 'Whatever',
             'slug' => 'whatever',
         ])
@@ -117,8 +117,8 @@ it('can store entry and user is redirected', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
-            '_redirect' => '/bobs-your-uncle',
+            '_collection' => encrypt('comments'),
+            '_redirect' => encrypt('/bobs-your-uncle'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -137,9 +137,9 @@ it('can store entry and ensure ignored parameters are not saved', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
-            '_redirect' => '/whatever',
-            '_error_redirect' => '/whatever-else',
+            '_collection' => encrypt('comments'),
+            '_redirect' => encrypt('/whatever'),
+            '_error_redirect' => encrypt('/whatever-else'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -162,7 +162,7 @@ it('can store entry and ensure updated at is set', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -184,7 +184,7 @@ it('can store entry where collection is date ordered and ensure date is saved', 
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -251,7 +251,7 @@ it('can store entry where collection is not date ordered and ensure date is save
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'date' => '2021-12-25',
@@ -276,7 +276,7 @@ it('can store entry and ensure honeypot works if value is empty', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great2',
             'postcode' => '',
@@ -298,7 +298,7 @@ it('can store entry and ensure honeypot works if value is not empty', function (
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great3',
             'postcode' => 'A12 34B',
@@ -315,7 +315,7 @@ it('can store entry and ensure entry is unpublished by default', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -335,7 +335,7 @@ it('can store entry and ensure published status is updated', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'published' => '1',
@@ -358,7 +358,7 @@ it('can store entry and ensure events and dispatched', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -379,7 +379,7 @@ it('can store entry and date is saved as part of file name if dated collection',
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'date' => '2021-06-06',
@@ -444,7 +444,7 @@ it('can store entry and ensure file can be uploaded', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'attachment' => UploadedFile::fake()->create('foobar.png'),
@@ -511,7 +511,7 @@ it('can store entry and ensure multiple files can be uploaded', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'attachments' => [
@@ -584,7 +584,7 @@ it('can store entry with one uploaded file and one existing file', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'attachments' => [
@@ -658,7 +658,7 @@ it('can store entry and ensure date is in same format defined in blueprint', fun
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'date' => '2009-06-06',
@@ -698,7 +698,7 @@ it('can store entry and ensure created in correct site by request payload', func
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'site' => 'one',
@@ -737,7 +737,7 @@ it('can store entry and ensure created in correct site by referer', function () 
     $this
         ->from('/two/something')
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -775,7 +775,7 @@ it('can store entry and ensure created in correct site by current site fallback'
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -797,7 +797,7 @@ it('can store entry and ensure entry is only saved once', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
         ])
@@ -863,7 +863,7 @@ it('can store entry with replicator field', function () {
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'things' => [
@@ -957,7 +957,7 @@ it('can store entry with replicator field and an assets field inside the replica
 
     $this
         ->post(route('statamic.guest-entries.store'), [
-            '_collection' => 'comments',
+            '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
             'things' => [
@@ -1000,8 +1000,8 @@ it('can update entry', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1031,8 +1031,8 @@ it('can update entry if collection has title format', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'name' => 'Allo Mate',
         ])
@@ -1060,9 +1060,9 @@ it('can update entry with custom form request', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
-            '_request' => FirstCustomUpdateRequest::class,
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            '_request' => encrypt(FirstCustomUpdateRequest::class),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect()
@@ -1083,8 +1083,8 @@ it('cant update entry if collection has not been whitelisted', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'hahahahaha',
-            '_id' => 'hahahahaha-idee',
+            '_collection' => encrypt('hahahahaha'),
+            '_id' => encrypt('hahahahaha-idee'),
             'title' => 'Something',
         ])
         ->assertForbidden();
@@ -1112,9 +1112,9 @@ it('can update entry and user is redirected', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
-            '_redirect' => '/good-good-night',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            '_redirect' => encrypt('/good-good-night'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect('/good-good-night');
@@ -1143,10 +1143,10 @@ it('can update entry and ensure required parameters are notsaved', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
-            '_redirect' => '/something',
-            '_error_redirect' => '/something-else',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            '_redirect' => encrypt('/something'),
+            '_error_redirect' => encrypt('/something-else'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1181,8 +1181,8 @@ it('can update entry and ensure updated at is set', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1215,8 +1215,8 @@ it('can update entry and ensure published status is updated', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1248,8 +1248,8 @@ it('can update entry and ensure events are dispatched', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1280,8 +1280,8 @@ it('can update entry and date is saved as part of file name if dated collection'
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'date' => '2021-09-09',
         ])
@@ -1357,8 +1357,8 @@ it('can update entry and ensure date is in same format as defined in blueprint',
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'date' => '2021-09-09',
         ])
@@ -1446,8 +1446,8 @@ it('can update entry and ensure file can be uploaded', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'attachment' => UploadedFile::fake()->image('something.jpg'),
         ])
@@ -1534,8 +1534,8 @@ it('can update entry and ensure multiple files can be uploaded', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'attachments' => [
                 UploadedFile::fake()->create('foobar.png'),
@@ -1628,8 +1628,8 @@ it('can update entry with one uploaded file and one existing file', function () 
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'attachments' => [
                 UploadedFile::fake()->create('foobar.png'),
@@ -1672,8 +1672,8 @@ it('can update entry with revisions enabled', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1715,8 +1715,8 @@ it('can update entry and date and ensure date is saved normally if not dated col
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'date' => '2021-09-09',
         ])
@@ -1751,8 +1751,8 @@ it('can update entry and ensure entry is only saved once', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1848,8 +1848,8 @@ it('can update entry with replicator field', function () {
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
         ])
         ->assertRedirect();
@@ -1953,8 +1953,8 @@ it('can update entry with replicator field and an assets field inside the replic
 
     $this
         ->post(route('statamic.guest-entries.update'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
             'things' => [
                 [
@@ -1997,8 +1997,8 @@ it('can destroy entry', function () {
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
         ])
         ->assertRedirect();
 
@@ -2021,8 +2021,8 @@ it('cant destroy entry if collection has not been whitelisted', function () {
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
-            '_collection' => 'blahblah',
-            '_id' => 'arg',
+            '_collection' => encrypt('blahblah'),
+            '_id' => encrypt('arg'),
         ])
         ->assertForbidden();
 
@@ -2046,9 +2046,9 @@ it('can destroy entry if collection has not been whitelisted and user is redirec
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
-            '_redirect' => '/allo-mate',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            '_redirect' => encrypt('/allo-mate'),
         ])
         ->assertRedirect('/allo-mate');
 
@@ -2074,8 +2074,8 @@ it('can destroy entry and ensure events are dispatched', function () {
 
     $this
         ->delete(route('statamic.guest-entries.destroy'), [
-            '_collection' => 'albums',
-            '_id' => 'allo-mate-idee',
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
         ])
         ->assertRedirect();
 
