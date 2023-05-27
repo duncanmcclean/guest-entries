@@ -3,7 +3,6 @@
 use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
 use Illuminate\Support\Facades\Config;
-
 use function PHPUnit\Framework\assertStringContainsString;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
