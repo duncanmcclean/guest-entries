@@ -28,4 +28,16 @@ return [
 
     'honeypot' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Form Parameter Validation
+    |--------------------------------------------------------------------------
+    |
+    | Guest Entries will encrypt & validate form parameters to prevent them
+    | from being tampered with. You may disable this if you wish.
+    |
+    */
+
+    'disable_form_parameter_validation' => false,
+
 ];

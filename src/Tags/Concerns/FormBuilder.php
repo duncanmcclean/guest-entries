@@ -18,11 +18,11 @@ trait FormBuilder
             $attrs = $this->formAttrs($action, $method, $knownParams);
 
             $params = $this->formParams($method, [
+                'collection' => $this->collectionValue(),
+                'id' => $this->idValue(),
                 'redirect' => $this->redirectValue(),
                 'error_redirect' => $this->errorRedirectValue(),
                 'request' => $this->requestValue(),
-                'collection' => $this->collectionValue(),
-                'id' => $this->idValue(),
             ]);
 
             return array_merge([
@@ -35,25 +35,11 @@ trait FormBuilder
 
         $html = $this->formOpen($action, $method, static::$knownParams);
 
-        if ($this->params->get('collection') !== null) {
-            $html .= $this->collectionField();
-        }
-
-        if ($this->params->get('id') !== null) {
-            $html .= $this->idField();
-        }
-
-        if ($this->params->get('redirect') != null) {
-            $html .= $this->redirectField();
-        }
-
-        if ($this->params->get('error_redirect') != null) {
-            $html .= $this->errorRedirectField();
-        }
-
-        if ($this->params->get('request') != null) {
-            $html .= $this->requestField();
-        }
+        $html .= $this->collectionField();
+        $html .= $this->idField();
+        $html .= $this->redirectField();
+        $html .= $this->errorRedirectField();
+        $html .= $this->requestField();
 
         $html .= $this->parse($this->sessionData($data));
 
@@ -73,27 +59,47 @@ trait FormBuilder
 
     protected function collectionValue()
     {
-        return $this->params->get('collection');
+        $collection = $this->params->get('collection') ?? 'Empty';
+
+        return config('guest-entries.disable_form_parameter_validation')
+            ? $collection
+            : encrypt($collection);
     }
 
     protected function idValue()
     {
-        return $this->params->get('id');
+        $id = $this->params->get('id') ?? 'Empty';
+
+        return config('guest-entries.disable_form_parameter_validation')
+            ? $id
+            : encrypt($id);
     }
 
     protected function redirectValue()
     {
-        return $this->params->get('redirect');
+        $redirect = $this->params->get('redirect') ?? 'Empty';
+
+        return config('guest-entries.disable_form_parameter_validation')
+            ? $redirect
+            : encrypt($redirect);
     }
 
     protected function errorRedirectValue()
     {
-        return $this->params->get('error_redirect');
+        $errorRedirect = $this->params->get('error_redirect') ?? 'Empty';
+
+        return config('guest-entries.disable_form_parameter_validation')
+            ? $errorRedirect
+            : encrypt($errorRedirect);
     }
 
     protected function requestValue()
     {
-        return $this->params->get('request');
+        $request = $this->params->get('request') ?? 'Empty';
+
+        return config('guest-entries.disable_form_parameter_validation')
+            ? $request
+            : encrypt($request);
     }
 
     protected function collectionField()
