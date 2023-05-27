@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v3.1.0 (2023-05-28)
+
+### What's new
+
+* Guest Entries tag is now compatible with Blade #55
+* Hidden form parameters are now encrypted to prevent tampering #56
+
 ## v3.0.0 (2023-04-28)
 
 ### What's new
