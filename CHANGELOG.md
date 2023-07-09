@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v3.1.1 (2023-07-09)
+
+### What's fixed
+
+* Fixed success message being shown permanently #58 #59
+
 ## v3.1.0 (2023-05-28)
 
 ### What's new
