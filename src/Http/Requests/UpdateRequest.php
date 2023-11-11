@@ -9,8 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 class UpdateRequest extends FormRequest
 {
     use Concerns\AcceptsFormRequests,
-        Concerns\WhitelistedCollections,
-        Concerns\HandleFailedValidation;
+        Concerns\HandleFailedValidation,
+        Concerns\WhitelistedCollections;
 
     public function authorize()
     {

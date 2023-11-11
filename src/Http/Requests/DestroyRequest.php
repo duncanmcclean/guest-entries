@@ -8,8 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class DestroyRequest extends FormRequest
 {
-    use Concerns\WhitelistedCollections,
-        Concerns\HandleFailedValidation;
+    use Concerns\HandleFailedValidation,
+        Concerns\WhitelistedCollections;
 
     public function authorize()
     {
