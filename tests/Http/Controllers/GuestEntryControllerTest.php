@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Spatie\TestTime\TestTime;
 use Statamic\Events\EntrySaved;
 use Statamic\Facades\Asset;
@@ -17,6 +18,8 @@ use Statamic\Facades\Blueprint;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
+
+use function PHPUnit\Framework\assertCount;
 
 beforeEach(function () {
     File::deleteDirectory(app('stache')->store('entries')->directory());
@@ -460,6 +463,66 @@ it('can store entry and ensure file can be uploaded', function () {
 
     $this->assertNotNull($entry->get('attachment'));
     $this->assertIsString($entry->get('attachment'));
+});
+
+it('cant store an entry when uploading a PHP file', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachment' => UploadedFile::fake()->image('foobar.php'),
+        ])
+        ->assertSessionHasErrors('attachment');
+
+    assertCount(0, Entry::all());
+
+    Storage::disk('local')->assertMissing('assets/foobar.php');
 });
 
 it('can store entry and ensure multiple files can be uploaded', function () {
@@ -1463,6 +1526,89 @@ it('can update entry and ensure file can be uploaded', function () {
 
     $this->assertNotNull($entry->get('attachment'));
     $this->assertIsString($entry->get('attachment'));
+});
+
+it('cant update entry when uploading a PHP file', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'artist',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'record_label',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'attachment' => UploadedFile::fake()->image('something.php'),
+        ])
+        ->assertSessionHasErrors('attachment');
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNull($entry->get('attachment'));
+
+    Storage::disk('local')->assertMissing('something.php');
 });
 
 it('can update entry and ensure multiple files can be uploaded', function () {

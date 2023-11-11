@@ -9,8 +9,8 @@ use Statamic\Facades\Collection;
 class StoreRequest extends FormRequest
 {
     use Concerns\AcceptsFormRequests,
-        Concerns\WhitelistedCollections,
-        Concerns\HandleFailedValidation;
+        Concerns\HandleFailedValidation,
+        Concerns\WhitelistedCollections;
 
     public function authorize()
     {

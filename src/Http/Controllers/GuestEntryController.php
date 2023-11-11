@@ -13,7 +13,9 @@ use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
@@ -240,8 +242,17 @@ class GuestEntryController extends Controller
             $uploadedFiles = [$uploadedFiles];
         }
 
-        // Filter out any null values.
-        $uploadedFiles = collect($uploadedFiles)->filter()->toArray();
+        $uploadedFiles = collect($uploadedFiles)
+            ->each(function ($file) use ($key) {
+                if (in_array(trim(strtolower($file->getClientOriginalExtension())), ['php', 'php3', 'php4', 'php5', 'phtml'])) {
+                    $validator = Validator::make([], []);
+                    $validator->errors()->add($key, __('Failed to upload.'));
+
+                    throw new ValidationException($validator);
+                }
+            })
+            ->filter()
+            ->toArray();
 
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
