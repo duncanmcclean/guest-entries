@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v3.1.2 (2023-11-11)
+
+### What's fixed
+
+* Added a fix to prevent `.php` files from being uploaded #60 by @duncanmcclean
+
 ## v3.1.1 (2023-07-09)
 
 ### What's fixed
