@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v3.1.3 (2023-11-15)
+
+### What's fixed
+
+* Added additional file extensions to the PHP file blacklist #61 by @duncanmcclean
+
 ## v3.1.2 (2023-11-11)
 
 ### What's fixed
