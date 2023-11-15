@@ -244,7 +244,7 @@ class GuestEntryController extends Controller
 
         $uploadedFiles = collect($uploadedFiles)
             ->each(function ($file) use ($key) {
-                if (in_array(trim(strtolower($file->getClientOriginalExtension())), ['php', 'php3', 'php4', 'php5', 'phtml'])) {
+                if (in_array(trim(strtolower($file->getClientOriginalExtension())), ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar'])) {
                     $validator = Validator::make([], []);
                     $validator->errors()->add($key, __('Failed to upload.'));
 
