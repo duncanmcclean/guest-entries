@@ -13,9 +13,11 @@ use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Rhukster\DomSanitizer\DOMSanitizer;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
@@ -258,6 +260,16 @@ class GuestEntryController extends Controller
 
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
+            if (Str::endsWith($uploadedFile->getClientOriginalExtension(), 'svg')) {
+                $sanitizer = new DOMSanitizer(DOMSanitizer::SVG);
+
+                $contents = $sanitizer->sanitize($svg = File::get($uploadedFile->getPathname()), [
+                    'remove-xml-tags' => ! Str::startsWith($svg, '<?xml'),
+                ]);
+
+                File::put($uploadedFile->getPathname(), $contents);
+            }
+
             $path = '/'.$uploadedFile->storeAs(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']
