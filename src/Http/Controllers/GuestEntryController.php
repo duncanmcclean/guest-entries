@@ -26,6 +26,7 @@ use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
 use Statamic\Fieldtypes\Replicator;
 use Statamic\Sites\Site;
+use Statamic\Validation\AllowedFile;
 
 class GuestEntryController extends Controller
 {
@@ -244,11 +245,12 @@ class GuestEntryController extends Controller
 
         $uploadedFiles = collect($uploadedFiles)
             ->each(function ($file) use ($key) {
-                if (in_array(trim(strtolower($file->getClientOriginalExtension())), ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar'])) {
-                    $validator = Validator::make([], []);
-                    $validator->errors()->add($key, __('Failed to upload.'));
+                $validator = Validator::make([$key => $file], [
+                    $key => ['file', new AllowedFile],
+                ]);
 
-                    throw new ValidationException($validator);
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages($validator->errors()->toArray());
                 }
             })
             ->filter()
