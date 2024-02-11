@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## v3.2.0 (2024-02-11)
+
+### What's fixed
+* File Upload Security fixes #64
+
 
 ## v3.1.3 (2023-11-15)
 
