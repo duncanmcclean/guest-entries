@@ -13,9 +13,11 @@ use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Rhukster\DomSanitizer\DOMSanitizer;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
@@ -26,6 +28,7 @@ use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
 use Statamic\Fieldtypes\Replicator;
 use Statamic\Sites\Site;
+use Statamic\Validation\AllowedFile;
 
 class GuestEntryController extends Controller
 {
@@ -244,11 +247,12 @@ class GuestEntryController extends Controller
 
         $uploadedFiles = collect($uploadedFiles)
             ->each(function ($file) use ($key) {
-                if (in_array(trim(strtolower($file->getClientOriginalExtension())), ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar'])) {
-                    $validator = Validator::make([], []);
-                    $validator->errors()->add($key, __('Failed to upload.'));
+                $validator = Validator::make([$key => $file], [
+                    $key => ['file', new AllowedFile],
+                ]);
 
-                    throw new ValidationException($validator);
+                if ($validator->fails()) {
+                    throw ValidationException::withMessages($validator->errors()->toArray());
                 }
             })
             ->filter()
@@ -256,6 +260,16 @@ class GuestEntryController extends Controller
 
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
+            if (Str::endsWith($uploadedFile->getClientOriginalExtension(), 'svg')) {
+                $sanitizer = new DOMSanitizer(DOMSanitizer::SVG);
+
+                $contents = $sanitizer->sanitize($svg = File::get($uploadedFile->getPathname()), [
+                    'remove-xml-tags' => ! Str::startsWith($svg, '<?xml'),
+                ]);
+
+                File::put($uploadedFile->getPathname(), $contents);
+            }
+
             $path = '/'.$uploadedFile->storeAs(
                 isset($field->config()['folder'])
                     ? $field->config()['folder']

@@ -465,6 +465,78 @@ it('can store entry and ensure file can be uploaded', function () {
     $this->assertIsString($entry->get('attachment'));
 });
 
+it('can store entry and ensure uploaded SVG file is sanitized', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg', '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'This is great');
+    $this->assertSame($entry->slug(), 'this-is-great');
+
+    $this->assertNotNull($entry->get('attachment'));
+    $this->assertIsString($entry->get('attachment'));
+
+    $file = Storage::disk('local')->get($entry->get('attachment'));
+
+    $this->assertStringNotContainsString('<script', $file);
+    $this->assertStringNotContainsString('Bad stuff could go in here.', $file);
+    $this->assertStringNotContainsString('</script>', $file);
+});
+
 it('cant store an entry when uploading a PHP file', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
@@ -1526,6 +1598,101 @@ it('can update entry and ensure file can be uploaded', function () {
 
     $this->assertNotNull($entry->get('attachment'));
     $this->assertIsString($entry->get('attachment'));
+});
+
+it('can update entry and ensure uploaded SVG file is sanitized', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'artist',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'record_label',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'record_label' => 'Unknown',
+            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg', '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Allo Mate!');
+    $this->assertSame($entry->get('record_label'), 'Unknown');
+    $this->assertSame($entry->slug(), 'allo-mate');
+
+    $this->assertNotNull($entry->get('attachment'));
+    $this->assertIsString($entry->get('attachment'));
+
+    $file = Storage::disk('local')->get($entry->get('attachment'));
+
+    $this->assertStringNotContainsString('<script', $file);
+    $this->assertStringNotContainsString('Bad stuff could go in here.', $file);
+    $this->assertStringNotContainsString('</script>', $file);
 });
 
 it('cant update entry when uploading a PHP file', function () {
