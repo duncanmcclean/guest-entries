@@ -27,8 +27,8 @@ use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
 use Statamic\Fieldtypes\Replicator;
+use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
-use Statamic\Validation\AllowedFile;
 
 class GuestEntryController extends Controller
 {
