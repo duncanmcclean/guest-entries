@@ -3,7 +3,7 @@
 namespace DuncanMcClean\GuestEntries\Tests;
 
 use DuncanMcClean\GuestEntries\ServiceProvider;
-use Statamic\Extend\AddonTestCase;
+use Statamic\Testing\AddonTestCase;
 
 abstract class TestCase extends AddonTestCase
 {
