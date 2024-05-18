@@ -215,7 +215,7 @@ class GuestEntryController extends Controller
             $value = $this->uploadFile($key, $field, $request);
         }
 
-        if ($field && $field->fieldtype() instanceof DateFieldtype) {
+        if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
             $format = $field->fieldtype()->config(
                 'format',
                 strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
