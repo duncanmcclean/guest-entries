@@ -14,7 +14,7 @@ trait FormBuilder
     {
         $knownParams = array_merge(static::$knownParams, $knownParams);
 
-        if (! $this->parser) {
+        if (! $this->canParseContents()) {
             $attrs = $this->formAttrs($action, $method, $knownParams);
 
             $params = $this->formParams($method, [

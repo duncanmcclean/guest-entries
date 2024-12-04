@@ -116,25 +116,11 @@ If you'd like to show a success message after a user has submitted the Guest Ent
 
 ## Using with Blade
 
-You can still use the tags provided by Guest Entries in Blade. However, they'll work slightly differently. Instead of Guest Entries constructing the HTML of the `<form>` for you, you need to construct the HTML yourself.
-
-Thankfully, it's an easy process:
+If you prefer Blade, you can use Statamic's [Blade Components](https://statamic.dev/blade#using-antlers-blade-components) feature, which allows you to use Antlers tags in Blade.
 
 ```blade
-@php
-$form = Statamic::tag('guest-entries:update')->params([
-    'collection' => 'articles',
-    'id' => 'id-of-entry',
-])->fetch();
-@endphp
-
-<form {!! $form['attrs_html'] !!}>
-    {!! $form['params_html'] !!}
+<statamic:guest-entries:create collection="blog">
     <input type="text" name="description" />
     <button>Update article</button>
-</form>
+</statamic:guest-entries:create>
 ```
-
-The above example uses the `{{ guest-entries:update }}` form. You simply use the `{!! $form['attrs_html'] !!}` in the `<form>` tag (this adds the `action` and `method` attributes). Then, somewhere inside the form, add the hidden parameters with `{!! $form['params_html'] !!}`.
-
-Make sure to pass in any required parameters in the `->params([])` array.
