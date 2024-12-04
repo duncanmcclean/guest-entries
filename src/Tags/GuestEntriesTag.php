@@ -49,7 +49,7 @@ class GuestEntriesTag extends Tags
         }
 
         if (! Entry::find($entryId)) {
-            throw new EntryNotFoundException();
+            throw new EntryNotFoundException;
         }
 
         return $this->createForm(
@@ -76,7 +76,7 @@ class GuestEntriesTag extends Tags
         }
 
         if (! Entry::find($entryId)) {
-            throw new EntryNotFoundException();
+            throw new EntryNotFoundException;
         }
 
         return $this->createForm(
