@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.1.0 (2024-12-04)
+
+### What's new
+* PHP 8.4 Support #75 by @duncanmcclean
+
+### What's fixed
+* Fixed issue when using Statamic's new Blade Components feature #71 by @jasonvarga
+
+
+
 ## v4.0.1 (2024-05-18)
 
 ### What's fixed
