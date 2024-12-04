@@ -60,11 +60,11 @@ class EnsureFormParametersArriveIntact
             $collectionParam = decrypt($request->get('_collection'));
             $idParam = decrypt($request->get('_id'));
         } catch (DecryptException $e) {
-            throw new InvalidFormParametersException();
+            throw new InvalidFormParametersException;
         }
 
         if (! $redirectParam || ! $errorRedirectParam || ! $requestParam) {
-            throw new InvalidFormParametersException();
+            throw new InvalidFormParametersException;
         }
 
         $request->merge([

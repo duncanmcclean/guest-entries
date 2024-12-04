@@ -30,7 +30,8 @@
     "require-dev": {
         "orchestra/testbench": "^8.0 || ^9.0",
         "pestphp/pest": "^2.2",
-        "spatie/test-time": "^1.2"
+        "spatie/test-time": "^1.2",
+        "laravel/pint": "^1.18"
     },
     "config": {
         "optimize-autoloader": true,
