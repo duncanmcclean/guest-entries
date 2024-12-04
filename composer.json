@@ -25,10 +25,10 @@
     },
     "require": {
         "php": "^8.2",
-        "statamic/cms": "^5.36"
+        "statamic/cms": "^5.41"
     },
     "require-dev": {
-        "orchestra/testbench": "^8.0 || ^9.0",
+        "orchestra/testbench": "^8.28 || ^9.6.1",
         "pestphp/pest": "^2.2",
         "spatie/test-time": "^1.2",
         "laravel/pint": "^1.18"
