@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.2.0 (2024-12-13)
+
+### What's improved
+* Added handling around duplicate entry slugs #76 by @duncanmcclean
+
+
+
 ## v4.1.0 (2024-12-04)
 
 ### What's new
