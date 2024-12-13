@@ -19,10 +19,12 @@ use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
 
+use Statamic\Structures\CollectionStructure;
 use function PHPUnit\Framework\assertCount;
 
 beforeEach(function () {
     File::deleteDirectory(app('stache')->store('entries')->directory());
+    File::deleteDirectory(app('stache')->store('collection-trees')->directory());
 
     $this->app['config']->set('guest-entries.collections', [
         'comments' => true,
@@ -83,6 +85,56 @@ it('can store entry when collection has title format', function () {
     $this->assertSame($entry->collectionHandle(), 'comments');
     $this->assertSame($entry->get('title'), 'BLAH So, I was sitting there and somebody came up to me and I asked them something.');
     $this->assertSame($entry->slug(), 'blah-so-i-was-sitting-there-and-somebody-came-up-to-me-and-i-asked-them-something');
+});
+
+it('can store entry with duplicate slug', function () {
+    Collection::make('comments')->save();
+    Entry::make()->collection('comments')->slug('this-is-fantastic')->data(['title' => 'This is fantastic'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is fantastic',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'This is fantastic');
+    $this->assertSame($entry->slug(), 'this-is-fantastic-1');
+});
+
+it('can store entry with duplicate slug with different parent', function () {
+    $collection = tap(Collection::make('comments')->structure((new CollectionStructure)->expectsRoot(true)))->save();
+
+    $one = tap(Entry::make()->collection('comments')->id('one')->slug('one'))->save();
+    $two = tap(Entry::make()->collection('comments')->id('two')->slug('two'))->save();
+    Entry::make()->collection('comments')->id('fantastic-one')->slug('this-is-fantastic')->save();
+
+    $tree = $collection->structure()->in('default');
+
+    $tree->tree([
+        ['entry' => 'one'],
+        ['entry' => 'two', 'children' => [
+            ['entry' => 'fantastic-one'],
+        ]],
+    ])->save(0);
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is fantastic',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'This is fantastic');
+    $this->assertSame($entry->slug(), 'this-is-fantastic');
 });
 
 it('can store entry with custom form request', function () {
