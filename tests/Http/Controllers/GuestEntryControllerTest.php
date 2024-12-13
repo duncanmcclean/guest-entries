@@ -18,8 +18,8 @@ use Statamic\Facades\Blueprint;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
-
 use Statamic\Structures\CollectionStructure;
+
 use function PHPUnit\Framework\assertCount;
 
 beforeEach(function () {

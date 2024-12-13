@@ -249,7 +249,7 @@ class GuestEntryController extends Controller
             }
 
             $iteration++;
-            $slug = $originalSlug . '-' . $iteration;
+            $slug = $originalSlug.'-'.$iteration;
         }
     }
 
