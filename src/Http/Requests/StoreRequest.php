@@ -2,7 +2,6 @@
 
 namespace DuncanMcClean\GuestEntries\Http\Requests;
 
-use DuncanMcClean\GuestEntries\Rules\CollectionExists;
 use Illuminate\Foundation\Http\FormRequest;
 use Statamic\Facades\Collection;
 
@@ -32,9 +31,7 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            '_collection' => ['required', 'string',
-                // new CollectionExists
-            ],
+            '_collection' => ['required', 'string'],
             '_redirect' => ['nullable', 'string'],
             '_error_redirect' => ['nullable', 'string'],
             '_request' => ['nullable', 'string'],
