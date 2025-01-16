@@ -32,12 +32,8 @@ class UpdateRequest extends FormRequest
     public function rules()
     {
         $rules = [
-            '_collection' => ['required', 'string',
-                // new CollectionExists
-            ],
-            '_id' => ['required', 'string',
-                // new EntryExists
-            ],
+            '_collection' => ['required', 'string'],
+            '_id' => ['required', 'string'],
             '_redirect' => ['nullable', 'string'],
             '_error_redirect' => ['nullable', 'string'],
             '_request' => ['nullable', 'string'],
