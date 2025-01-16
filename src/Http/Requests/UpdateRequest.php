@@ -14,7 +14,19 @@ class UpdateRequest extends FormRequest
 
     public function authorize()
     {
-        return $this->collectionIsWhitelisted($this->get('_collection'));
+        if (! $this->collectionIsWhitelisted($this->get('_collection'))) {
+            return false;
+        }
+
+        if ($formRequest = $this->get('_request')) {
+            $formRequest = $this->buildFormRequest($formRequest, $this);
+
+            if (method_exists($formRequest, 'authorize')) {
+                return $formRequest->authorize();
+            }
+        }
+
+        return true;
     }
 
     public function rules()
