@@ -2,8 +2,6 @@
 
 namespace DuncanMcClean\GuestEntries\Http\Requests;
 
-use DuncanMcClean\GuestEntries\Rules\CollectionExists;
-use DuncanMcClean\GuestEntries\Rules\EntryExists;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DestroyRequest extends FormRequest

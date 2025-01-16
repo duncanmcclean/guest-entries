@@ -2,7 +2,6 @@
 
 namespace DuncanMcClean\GuestEntries\Http\Requests;
 
-use DuncanMcClean\GuestEntries\Rules\CollectionExists;
 use Illuminate\Foundation\Http\FormRequest;
 use Statamic\Facades\Collection;
 
