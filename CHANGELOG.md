@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.3.0 (2025-01-16)
+
+### What's new
+* Guest Entries will now call the `authorize` method on form requests #78 by @duncanmcclean
+
+### What's improved
+* Remove un-used validation rules #79 by @duncanmcclean
+
+
+
 ## v4.2.0 (2024-12-13)
 
 ### What's improved
