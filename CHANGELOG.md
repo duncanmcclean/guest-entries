@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.3.2 (2025-01-17)
+
+### What's fixed
+* Ensure entries are appended to collection tree #81 by @duncanmcclean
+
+
+
 ## v4.3.1 (2025-01-17)
 
 ### What's fixed
