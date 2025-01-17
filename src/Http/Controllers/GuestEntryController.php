@@ -46,7 +46,7 @@ class GuestEntryController extends Controller
         /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::make()
             ->collection($collection->handle())
-            ->locale($this->guessSiteFromRequest($request))
+            ->locale($site = $this->guessSiteFromRequest($request))
             ->published(false);
 
         if ($collection->dated()) {
@@ -74,6 +74,18 @@ class GuestEntryController extends Controller
             $entry->slug($request->get('slug'));
         } elseif ($collection->entryBlueprint()->hasField('title')) {
             $entry->slug($this->generateEntrySlug($entry));
+        }
+
+        if ($collection->hasStructure() && $structure = $collection->structure()) {
+            $tree = $structure->in($site->handle());
+
+            $entry->afterSave(function ($entry) use ($tree) {
+                $tree->append($entry)->save();
+
+                Stache::store('entries')
+                    ->store($entry->collectionHandle())
+                    ->updateUris([$entry->id()]);
+            });
         }
 
         $entry->touch();
