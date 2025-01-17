@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.3.1 (2025-01-17)
+
+### What's fixed
+* Refactored how form requests are built #80 by @duncanmcclean
+
+
+
 ## v4.3.0 (2025-01-16)
 
 ### What's new
