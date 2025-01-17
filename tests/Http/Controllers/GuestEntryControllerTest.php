@@ -137,6 +137,46 @@ it('can store entry with duplicate slug with different parent', function () {
     $this->assertSame($entry->slug(), 'this-is-fantastic');
 });
 
+it('can store entry in an ordered collection', function () {
+    $collection = tap(Collection::make('comments')
+        ->structure((new CollectionStructure)->expectsRoot(true))
+        ->routes('/comments/{slug}')
+    )->save();
+
+    Entry::make()->collection('comments')->id('one')->slug('one')->save();
+    Entry::make()->collection('comments')->id('two')->slug('two')->save();
+
+    $tree = $collection->structure()->in('default');
+
+    $tree->tree([
+        ['entry' => 'one'],
+        ['entry' => 'two'],
+    ])->save(0);
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'Three',
+            'slug' => 'three',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'Three');
+    $this->assertSame($entry->slug(), 'three');
+
+    $this->assertEquals([
+        ['entry' => 'one'],
+        ['entry' => 'two'],
+        ['entry' => $entry->id()],
+    ], $collection->structure()->in('default')->tree());
+
+    $this->assertNotNull(Entry::query()->where('uri', '/comments/three')->first());
+});
+
 it('can store entry with custom form request', function () {
     Collection::make('comments')->save();
 
