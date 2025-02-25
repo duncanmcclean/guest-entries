@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.4.0 (2025-02-25)
+
+### What's new
+* Supports Laravel 12 #83 by @duncanmcclean
+
+
+
 ## v4.3.2 (2025-01-17)
 
 ### What's fixed
