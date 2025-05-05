@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.5.0 (2025-05-05)
+
+### What's new
+* Support for dynamic asset folders #84 #85 by @duncanmcclean
+
+
+
 ## v4.4.0 (2025-02-25)
 
 ### What's new
