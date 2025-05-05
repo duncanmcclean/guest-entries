@@ -557,6 +557,134 @@ it('can store entry and ensure file can be uploaded', function () {
     $this->assertIsString($entry->get('attachment'));
 });
 
+it('can store entry and with file and ensure folder setting is respected', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                                'folder' => 'foo',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachment' => UploadedFile::fake()->create('foobar.png'),
+        ])
+        ->assertRedirect();
+
+    $this->assertNotNull($entry = Entry::all()->last());
+
+    $this->assertNotNull($entry->get('attachment'));
+    $this->assertIsString($entry->get('attachment'));
+    $this->assertStringContainsString('foo/', $entry->get('attachment'));
+    $this->assertStringContainsString('-foobar.png', $entry->get('attachment'));
+});
+
+it('can store entry and with file and ensure dynamic folder is used', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                                'dynamic' => 'slug',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'attachment' => UploadedFile::fake()->create('foobar.png'),
+        ])
+        ->assertRedirect();
+
+    $this->assertNotNull($entry = Entry::all()->last());
+
+    $this->assertNotNull($entry->get('attachment'));
+    $this->assertIsString($entry->get('attachment'));
+    $this->assertStringContainsString('this-is-great/', $entry->get('attachment'));
+    $this->assertStringContainsString('-foobar.png', $entry->get('attachment'));
+});
+
 it('can store entry and ensure uploaded SVG file is sanitized', function () {
     AssetContainer::make('assets')->disk('local')->save();
 

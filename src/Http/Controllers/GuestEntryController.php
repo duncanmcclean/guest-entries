@@ -49,6 +49,12 @@ class GuestEntryController extends Controller
             ->locale($site = $this->guessSiteFromRequest($request))
             ->published(false);
 
+        // By setting the ID here, it can be used as a dynamic folder name in the Assets fieldtype.
+        // However, this will only work for the Stache driver.
+        if (config('statamic.eloquent-driver.entries.driver' === 'file')) {
+            $entry->id(Stache::generateId());
+        }
+
         if ($collection->dated()) {
             $this->ignoredParameters[] = 'date';
             $entry->date($request->get('date') ?? now());
@@ -65,7 +71,7 @@ class GuestEntryController extends Controller
             $entry->set(
                 $key,
                 $field
-                    ? $this->processField($field, $key, $value, $request)
+                    ? $this->processField($entry, $field, $key, $value, $request)
                     : $value
             );
         }
@@ -124,7 +130,7 @@ class GuestEntryController extends Controller
             $field = $entry->blueprint()->field($key);
 
             $data[$key] = $field
-                ? $this->processField($field, $key, $value, $request)
+                ? $this->processField($entry, $field, $key, $value, $request)
                 : $value;
         }
 
@@ -183,20 +189,20 @@ class GuestEntryController extends Controller
         return $this->withSuccess($request);
     }
 
-    protected function processField(Field $field, $key, $value, $request): mixed
+    protected function processField($entry, Field $field, $key, $value, $request): mixed
     {
         if ($field && $field->fieldtype() instanceof Replicator) {
             $replicatorField = $field;
 
             return collect($value)
-                ->map(function ($item, $index) use ($replicatorField, $request) {
+                ->map(function ($item, $index) use ($entry, $replicatorField, $request) {
                     $set = $item['type'] ?? array_values($replicatorField->fieldtype()->config('sets'))[0];
 
                     return collect($item)
                         ->reject(function ($value, $fieldHandle) {
                             return $fieldHandle === 'type';
                         })
-                        ->map(function ($value, $fieldHandle) use ($replicatorField, $index, $set, $request) {
+                        ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $set, $request) {
                             $field = collect($set['fields'])
                                 ->where('handle', $fieldHandle)
                                 ->map(function ($field) {
@@ -211,7 +217,7 @@ class GuestEntryController extends Controller
                             $key = "{$replicatorField->handle()}.{$index}.{$fieldHandle}";
 
                             return $field
-                                ? $this->processField($field, $key, $value, $request)
+                                ? $this->processField($entry, $field, $key, $value, $request)
                                 : $value;
                         })
                         ->merge([
@@ -223,7 +229,7 @@ class GuestEntryController extends Controller
         }
 
         if ($field && $field->fieldtype() instanceof AssetFieldtype) {
-            $value = $this->uploadFile($key, $field, $request);
+            $value = $this->uploadFile($entry, $key, $field, $request);
         }
 
         if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
@@ -265,7 +271,7 @@ class GuestEntryController extends Controller
         }
     }
 
-    protected function uploadFile(string $key, Field $field, Request $request)
+    protected function uploadFile($entry, string $key, Field $field, Request $request)
     {
         if (! isset($field->config()['container'])) {
             throw new AssetContainerNotSpecified("Please specify an asset container on your [{$key}] field, in order for file uploads to work.");
@@ -308,12 +314,18 @@ class GuestEntryController extends Controller
                 File::put($uploadedFile->getPathname(), $contents);
             }
 
+            $folder = match (true) {
+                ! is_null($field->get('folder')) => $field->get('folder'),
+                $field->get('dynamic') === 'id' => $entry->id(),
+                $field->get('dynamic') === 'slug' => $entry->slug() ?? $request->get('slug') ?? Str::slug($request->get('title'), '-'),
+                $field->get('dynamic') === 'author' => $entry->author ?? $request->get('author'),
+                default => '',
+            };
+
             $path = '/'.$uploadedFile->storeAs(
-                isset($field->config()['folder'])
-                    ? $field->config()['folder']
-                    : '',
-                now()->timestamp.'-'.$uploadedFile->getClientOriginalName(),
-                $assetContainer->diskHandle()
+                path: $folder,
+                name: now()->timestamp.'-'.$uploadedFile->getClientOriginalName(),
+                options: ['disk' => $assetContainer->diskHandle()]
             );
 
             // Does path start with a '/'? If so, strip it off.
