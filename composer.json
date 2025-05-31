@@ -24,12 +24,12 @@
         }
     },
     "require": {
-        "php": "^8.2",
-        "statamic/cms": "^5.41"
+        "php": "^8.3",
+        "statamic/cms": "dev-master"
     },
     "require-dev": {
-        "pestphp/pest": "^2.2 || ^3.0",
-        "orchestra/testbench": "^8.28 || ^9.6.1 || ^10.0",
+        "pestphp/pest": "^3.0",
+        "orchestra/testbench": "^9.6.1 || ^10.0",
         "spatie/test-time": "^1.2",
         "laravel/pint": "^1.18"
     },

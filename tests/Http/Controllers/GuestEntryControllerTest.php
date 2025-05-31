@@ -292,7 +292,7 @@ it('can store entry where collection is date ordered and ensure date is saved', 
     $this->assertSame($entry->get('title'), 'This is great');
     $this->assertSame($entry->slug(), 'this-is-great');
 
-    $this->assertStringContainsString('2021-10-10.this-is-great.md', $entry->path());
+    $this->assertStringContainsString('2021-10-10-1111.this-is-great.md', $entry->path());
 });
 
 it('can store entry where collection is not date ordered and ensure date is saved', function () {
@@ -1034,7 +1034,7 @@ it('can store entry and ensure date is in same format defined in blueprint', fun
 it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
 
-    Config::set('statamic.sites.sites', [
+    Site::setSites([
         'one' => [
             'name' => config('app.name'),
             'locale' => 'en_US',
@@ -1046,8 +1046,6 @@ it('can store entry and ensure created in correct site by request payload', func
             'url' => '/two',
         ],
     ]);
-
-    Site::setConfig(config('statamic.sites'));
 
     Collection::make('comments')->save();
 
@@ -1072,7 +1070,7 @@ it('can store entry and ensure created in correct site by request payload', func
 it('can store entry and ensure created in correct site by referer', function () {
     Config::set('statamic.editions.pro', true);
 
-    Config::set('statamic.sites.sites', [
+    Site::setSites([
         'one' => [
             'name' => config('app.name'),
             'locale' => 'en_US',
@@ -1084,8 +1082,6 @@ it('can store entry and ensure created in correct site by referer', function () 
             'url' => '/two',
         ],
     ]);
-
-    Site::setConfig(config('statamic.sites'));
 
     Collection::make('comments')->save();
 
@@ -1110,7 +1106,7 @@ it('can store entry and ensure created in correct site by referer', function () 
 it('can store entry and ensure created in correct site by current site fallback', function () {
     Config::set('statamic.editions.pro', true);
 
-    Config::set('statamic.sites.sites', [
+    Site::setSites([
         'one' => [
             'name' => config('app.name'),
             'locale' => 'en_US',
@@ -1123,7 +1119,6 @@ it('can store entry and ensure created in correct site by current site fallback'
         ],
     ]);
 
-    Site::setConfig(config('statamic.sites'));
     Site::setCurrent('two');
 
     Collection::make('comments')->save();
