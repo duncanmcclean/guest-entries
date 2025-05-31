@@ -124,3 +124,57 @@ If you prefer Blade, you can use Statamic's [Blade Components](https://statamic.
     <button>Update article</button>
 </statamic:guest-entries:create>
 ```
+
+## Fieldtypes
+
+The Guest Entries addon will take the values you pass and save them as-is in the entry data. This means that you can use any fieldtype that Statamic supports, as long as you save the data in the correct format.
+
+If you're not sure how a fieldtype is saved, re-create it in the Control Panel first and look at the data that gets saved. Some fieldtypes will save strings, while others will save complicated arrays, with lots of nested data.
+
+### Replicator
+
+In the below example, `line_items` is the handle of the Replicator field, and `name` and `description` are the fields within that Replicator.
+
+```html
+<input class="mb-6" type="text" name="line_items[0][name]" />
+<textarea name="line_items[0][description]"></textarea>
+
+<input class="mb-6" type="text" name="line_items[1][name]" />
+<textarea name="line_items[1][description]"></textarea>
+```
+
+### Grid
+
+In the below example, `line_items` is the handle of the Grid field, and `name` and `description` are the fields within the Grid.
+
+```html
+<input class="mb-6" type="text" name="line_items[0][name]" />
+<textarea name="line_items[0][description]"></textarea>
+
+<input class="mb-6" type="text" name="line_items[1][name]" />
+<textarea name="line_items[1][description]"></textarea>
+```
+
+### Assets
+
+Before you can upload files using the `{{ guest-entries }}` tags, you will need to add the `files="true"` parameter to the tag:
+
+```antlers
+{{ guest-entries:create collection="articles" files="true" }}
+```
+
+Then, you can add a file input to your form, like so:
+
+```antlers
+<input type="file" name="attachments[]" />
+```
+
+If you want to allow multiple files, simply add multiple inputs with the same name, like so:
+
+```antlers
+<input type="file" name="attachments[]" />
+<input type="file" name="attachments[]" />
+<input type="file" name="attachments[]" />
+```
+
+When the form is submitted, the files will be uploaded to the specified asset container and linked to the entry.
