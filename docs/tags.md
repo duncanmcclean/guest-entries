@@ -73,7 +73,11 @@ Pretty self-explanatory. Allows you to provide a slug for the created entry. Whe
 
 **`date`**
 
-When using a dated collection, a `date` will be allowed. When not provided, the current date is used.
+When using a [dated collection](https://statamic.dev/collections#dates), you may use a `date` input to specify the date of the entry. 
+
+When a `date` input isn't provided, the current date will be used instead.
+
+> **Note:** You should ensure that dates are converted into your application's timezone (normally `UTC`) *before* submitting the form. Learn more about [how Statamic handles timezones](https://statamic.dev/tips/timezones).
 
 **`published`**
 
@@ -178,3 +182,15 @@ If you want to allow multiple files, simply add multiple inputs with the same na
 ```
 
 When the form is submitted, the files will be uploaded to the specified asset container and linked to the entry.
+
+## Date
+
+You can use a standard `<input type="date">` input for date fields.
+
+```antlers
+<input type="date" name="date" />
+```
+
+However, it's worth noting that the date should be submitted in your application's timezone (normally `UTC`). This means you may need to use JavaScript to convert the date from the user's local timezone to your app's timezone.
+
+To learn more about how Statamic handles timezones, please review [the Statamic documentation](https://statamic.dev/tips/timezones).
