@@ -1,6 +1,6 @@
 # Changelog
 
-## v5.0.0 (2025-08-21)
+## v5.0.0-alpha.1 (2025-08-21)
 
 ### What's new
 - Statamic 6 support
