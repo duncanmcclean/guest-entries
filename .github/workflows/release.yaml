@@ -45,7 +45,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
           body: ${{ steps.changelog.outputs.text }}
-          prerelease: ${{ contains(github.ref, '-beta') }}
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
 
       - name: Comment on related issues
         uses: duncanmcclean/post-release-comments@v1.0.6
