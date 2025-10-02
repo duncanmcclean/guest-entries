@@ -223,7 +223,6 @@ class GuestEntryController extends Controller
                                     ->first();
                             }
 
-
                             if (! $field) {
                                 return $value;
                             }

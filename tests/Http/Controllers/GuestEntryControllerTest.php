@@ -121,8 +121,8 @@ it('can store entry with duplicate slug with different parent', function () {
         ['entry' => 'one'],
         [
             'entry' => 'two', 'children' => [
-            ['entry' => 'fantastic-one'],
-        ]
+                ['entry' => 'fantastic-one'],
+            ],
         ],
     ])->save(0);
 
@@ -2420,9 +2420,9 @@ it('can update entry with replicator field in the newish way', function () {
                                     'field' => [
                                         'type' => 'text',
                                         'validate' => ['required'],
-                                    ]
-                                ]
-                            ]
+                                    ],
+                                ],
+                            ],
                         ],
                         [
                             'fields' => [
@@ -2442,8 +2442,8 @@ it('can update entry with replicator field in the newish way', function () {
                                                                 'handle' => 'name',
                                                                 'field' => [
                                                                     'type' => 'text',
-                                                                    'display' => 'Name'
-                                                                ]
+                                                                    'display' => 'Name',
+                                                                ],
                                                             ],
                                                             [
                                                                 'handle' => 'checklist',
@@ -2458,8 +2458,8 @@ it('can update entry with replicator field in the newish way', function () {
                                                                                 'type' => 'text',
                                                                                 'display' => 'Überschrift',
                                                                                 'localizable' => false,
-                                                                                'width' => 75
-                                                                            ]
+                                                                                'width' => 75,
+                                                                            ],
                                                                         ],
                                                                         [
                                                                             'handle' => 'is_done',
@@ -2467,33 +2467,33 @@ it('can update entry with replicator field in the newish way', function () {
                                                                                 'type' => 'toggle',
                                                                                 'display' => 'Erledigt',
                                                                                 'localizable' => false,
-                                                                                'width' => 25
-                                                                            ]
+                                                                                'width' => 25,
+                                                                            ],
                                                                         ],
                                                                         [
                                                                             'handle' => 'description',
                                                                             'field' => [
                                                                                 'type' => 'textarea',
                                                                                 'display' => 'Beschreibung',
-                                                                                'localizable' => false
-                                                                            ]
-                                                                        ]
-                                                                    ]
-                                                                ]
-                                                            ]
-                                                        ]
-                                                    ]
-                                                ]
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
+                                                                                'localizable' => false,
+                                                                            ],
+                                                                        ],
+                                                                    ],
+                                                                ],
+                                                            ],
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
-            'title' => 'Checklist'
+            'title' => 'Checklist',
         ])
         ->save();
 
@@ -2514,16 +2514,16 @@ it('can update entry with replicator field in the newish way', function () {
                             'id' => 'mfzefj0y',
                             'hl' => 'Actionbild',
                             'description' => 'Test',
-                            'is_done' => true
+                            'is_done' => true,
                         ],
                         [
                             'id' => 'mfzg61ls',
                             'hl' => 'asdsfgsdg',
-                            'description' => 'dfdfdfg'
-                        ]
+                            'description' => 'dfdfdfg',
+                        ],
                     ],
                     'type' => 'category',
-                    'enabled' => true
+                    'enabled' => true,
                 ],
                 [
                     'id' => 'mfzg64m6',
@@ -2533,18 +2533,18 @@ it('can update entry with replicator field in the newish way', function () {
                             'id' => 'mfzg68ik',
                             'hl' => 'dfgdfgfd',
                             'is_done' => true,
-                            'description' => 'dfgfdgfdg'
+                            'description' => 'dfgfdgfdg',
                         ],
                         [
                             'id' => 'mfzg6d0f',
                             'hl' => 'gfhgfhgfh',
-                            'description' => 'asddfggfdg'
-                        ]
+                            'description' => 'asddfggfdg',
+                        ],
                     ],
                     'type' => 'category',
-                    'enabled' => true
-                ]
-            ]
+                    'enabled' => true,
+                ],
+            ],
         ])
         ->save();
 
@@ -2560,8 +2560,8 @@ it('can update entry with replicator field in the newish way', function () {
                         ['id' => 'mfzefj0y', 'hl' => 'Actionbild', 'description' => 'Test', 'is_done' => true],
                         ['id' => 'mfzg61ls', 'hl' => 'asdsfgsdg', 'description' => 'dfdfdfg'],
                     ],
-//                    'type' => 'category',
-                    'enabled' => true
+                    //                    'type' => 'category',
+                    'enabled' => true,
                 ],
                 [
                     'id' => 'mfzg64m6',
@@ -2570,8 +2570,8 @@ it('can update entry with replicator field in the newish way', function () {
                         ['id' => 'mfzg68ik', 'hl' => 'dfgdfgfd', 'description' => 'dfgfdgfdg'],
                         ['id' => 'mfzg6d0f', 'hl' => 'gfhgfhgfh', 'description' => 'asddfggfdg'],
                     ],
-//                    'type' => 'category',
-                    'enabled' => true
+                    //                    'type' => 'category',
+                    'enabled' => true,
                 ],
             ],
         ])
@@ -2593,16 +2593,16 @@ it('can update entry with replicator field in the newish way', function () {
                     'id' => 'mfzefj0y',
                     'hl' => 'Actionbild',
                     'description' => 'Test',
-                    'is_done' => true
+                    'is_done' => true,
                 ],
                 [
                     'id' => 'mfzg61ls',
                     'hl' => 'asdsfgsdg',
-                    'description' => 'dfdfdfg'
-                ]
+                    'description' => 'dfdfdfg',
+                ],
             ],
             'type' => 'category',
-            'enabled' => true
+            'enabled' => true,
         ],
         [
             'id' => 'mfzg64m6',
@@ -2612,17 +2612,17 @@ it('can update entry with replicator field in the newish way', function () {
                     // This one used to have "is_done" set to true, but we unset it in the request.
                     'id' => 'mfzg68ik',
                     'hl' => 'dfgdfgfd',
-                    'description' => 'dfgfdgfdg'
+                    'description' => 'dfgfdgfdg',
                 ],
                 [
                     'id' => 'mfzg6d0f',
                     'hl' => 'gfhgfhgfh',
-                    'description' => 'asddfggfdg'
-                ]
+                    'description' => 'asddfggfdg',
+                ],
             ],
             'type' => 'category',
-            'enabled' => true
-        ]
+            'enabled' => true,
+        ],
     ], $entry->get('category'));
 });
 
