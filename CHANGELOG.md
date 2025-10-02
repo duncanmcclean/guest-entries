@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.5.1 (2025-10-02)
+
+### What's fixed
+* Fixed replicator set handling #88 by @duncanmcclean
+* Moved file uploads & replicator example to the tags page by @duncanmcclean
+
+
+
 ## v4.5.0 (2025-05-05)
 
 ### What's new
