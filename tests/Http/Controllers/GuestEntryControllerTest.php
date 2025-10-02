@@ -83,8 +83,10 @@ it('can store entry when collection has title format', function () {
 
     $this->assertNotNull($entry);
     $this->assertSame($entry->collectionHandle(), 'comments');
-    $this->assertSame($entry->get('title'), 'BLAH So, I was sitting there and somebody came up to me and I asked them something.');
-    $this->assertSame($entry->slug(), 'blah-so-i-was-sitting-there-and-somebody-came-up-to-me-and-i-asked-them-something');
+    $this->assertSame($entry->get('title'),
+        'BLAH So, I was sitting there and somebody came up to me and I asked them something.');
+    $this->assertSame($entry->slug(),
+        'blah-so-i-was-sitting-there-and-somebody-came-up-to-me-and-i-asked-them-something');
 });
 
 it('can store entry with duplicate slug', function () {
@@ -117,9 +119,11 @@ it('can store entry with duplicate slug with different parent', function () {
 
     $tree->tree([
         ['entry' => 'one'],
-        ['entry' => 'two', 'children' => [
-            ['entry' => 'fantastic-one'],
-        ]],
+        [
+            'entry' => 'two', 'children' => [
+                ['entry' => 'fantastic-one'],
+            ],
+        ],
     ])->save(0);
 
     $this
@@ -736,7 +740,8 @@ it('can store entry and ensure uploaded SVG file is sanitized', function () {
             '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
-            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg', '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
+            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg',
+                '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
         ])
         ->assertRedirect();
 
@@ -1893,7 +1898,8 @@ it('can update entry and ensure uploaded SVG file is sanitized', function () {
             '_collection' => encrypt('albums'),
             '_id' => encrypt('allo-mate-idee'),
             'record_label' => 'Unknown',
-            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg', '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
+            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg',
+                '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
         ])
         ->assertRedirect();
 
@@ -2397,6 +2403,227 @@ it('can update entry with replicator field', function () {
 
     $this->assertIsArray($entry->get('things'));
     $this->assertCount(2, $entry->get('things'));
+});
+
+it('can update entry with replicator field in the newish way', function () {
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'tabs' => [
+                'main' => [
+                    'display' => 'Hauptteil',
+                    'sections' => [
+                        [
+                            'fields' => [
+                                [
+                                    'handle' => 'title',
+                                    'field' => [
+                                        'type' => 'text',
+                                        'validate' => ['required'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        [
+                            'fields' => [
+                                [
+                                    'handle' => 'category',
+                                    'field' => [
+                                        'type' => 'replicator',
+                                        'display' => 'Kategorie / Seite',
+                                        'sets' => [
+                                            'category' => [
+                                                'display' => 'Kategorie / Seite',
+                                                'sets' => [
+                                                    'category' => [
+                                                        'display' => 'Kategorie / Seite',
+                                                        'fields' => [
+                                                            [
+                                                                'handle' => 'name',
+                                                                'field' => [
+                                                                    'type' => 'text',
+                                                                    'display' => 'Name',
+                                                                ],
+                                                            ],
+                                                            [
+                                                                'handle' => 'checklist',
+                                                                'field' => [
+                                                                    'type' => 'grid',
+                                                                    'display' => 'Checkliste',
+                                                                    'mode' => 'stacked',
+                                                                    'fields' => [
+                                                                        [
+                                                                            'handle' => 'hl',
+                                                                            'field' => [
+                                                                                'type' => 'text',
+                                                                                'display' => 'Überschrift',
+                                                                                'localizable' => false,
+                                                                                'width' => 75,
+                                                                            ],
+                                                                        ],
+                                                                        [
+                                                                            'handle' => 'is_done',
+                                                                            'field' => [
+                                                                                'type' => 'toggle',
+                                                                                'display' => 'Erledigt',
+                                                                                'localizable' => false,
+                                                                                'width' => 25,
+                                                                            ],
+                                                                        ],
+                                                                        [
+                                                                            'handle' => 'description',
+                                                                            'field' => [
+                                                                                'type' => 'textarea',
+                                                                                'display' => 'Beschreibung',
+                                                                                'localizable' => false,
+                                                                            ],
+                                                                        ],
+                                                                    ],
+                                                                ],
+                                                            ],
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            'title' => 'Checklist',
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'category' => [
+                [
+                    'id' => 'mfzefa0t',
+                    'name' => 'Home',
+                    'checklist' => [
+                        [
+                            'id' => 'mfzefj0y',
+                            'hl' => 'Actionbild',
+                            'description' => 'Test',
+                            'is_done' => true,
+                        ],
+                        [
+                            'id' => 'mfzg61ls',
+                            'hl' => 'asdsfgsdg',
+                            'description' => 'dfdfdfg',
+                        ],
+                    ],
+                    'type' => 'category',
+                    'enabled' => true,
+                ],
+                [
+                    'id' => 'mfzg64m6',
+                    'name' => 'Leistungen',
+                    'checklist' => [
+                        [
+                            'id' => 'mfzg68ik',
+                            'hl' => 'dfgdfgfd',
+                            'is_done' => true,
+                            'description' => 'dfgfdgfdg',
+                        ],
+                        [
+                            'id' => 'mfzg6d0f',
+                            'hl' => 'gfhgfhgfh',
+                            'description' => 'asddfggfdg',
+                        ],
+                    ],
+                    'type' => 'category',
+                    'enabled' => true,
+                ],
+            ],
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'category' => [
+                [
+                    'id' => 'mfzefa0t',
+                    'name' => 'Home',
+                    'checklist' => [
+                        ['id' => 'mfzefj0y', 'hl' => 'Actionbild', 'description' => 'Test', 'is_done' => true],
+                        ['id' => 'mfzg61ls', 'hl' => 'asdsfgsdg', 'description' => 'dfdfdfg'],
+                    ],
+                    //                    'type' => 'category',
+                    'enabled' => true,
+                ],
+                [
+                    'id' => 'mfzg64m6',
+                    'name' => 'Leistungen',
+                    'checklist' => [
+                        ['id' => 'mfzg68ik', 'hl' => 'dfgdfgfd', 'description' => 'dfgfdgfdg'],
+                        ['id' => 'mfzg6d0f', 'hl' => 'gfhgfhgfh', 'description' => 'asddfggfdg'],
+                    ],
+                    //                    'type' => 'category',
+                    'enabled' => true,
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+
+    $this->assertCount(2, $entry->get('category'));
+
+    $this->assertEquals([
+        [
+            'id' => 'mfzefa0t',
+            'name' => 'Home',
+            'checklist' => [
+                [
+                    'id' => 'mfzefj0y',
+                    'hl' => 'Actionbild',
+                    'description' => 'Test',
+                    'is_done' => true,
+                ],
+                [
+                    'id' => 'mfzg61ls',
+                    'hl' => 'asdsfgsdg',
+                    'description' => 'dfdfdfg',
+                ],
+            ],
+            'type' => 'category',
+            'enabled' => true,
+        ],
+        [
+            'id' => 'mfzg64m6',
+            'name' => 'Leistungen',
+            'checklist' => [
+                [
+                    // This one used to have "is_done" set to true, but we unset it in the request.
+                    'id' => 'mfzg68ik',
+                    'hl' => 'dfgdfgfd',
+                    'description' => 'dfgfdgfdg',
+                ],
+                [
+                    'id' => 'mfzg6d0f',
+                    'hl' => 'gfhgfhgfh',
+                    'description' => 'asddfggfdg',
+                ],
+            ],
+            'type' => 'category',
+            'enabled' => true,
+        ],
+    ], $entry->get('category'));
 });
 
 it('can update entry with replicator field and an assets field inside the replicator', function () {
