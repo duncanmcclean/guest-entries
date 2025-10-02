@@ -7,3 +7,4 @@ package-lock.json
 .idea
 composer.lock
 .phpunit.cache
+tests/__fixtures__
