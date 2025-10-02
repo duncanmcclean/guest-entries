@@ -203,12 +203,25 @@ class GuestEntryController extends Controller
                             return $fieldHandle === 'type';
                         })
                         ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $set, $request) {
-                            $field = collect($set['fields'])
-                                ->where('handle', $fieldHandle)
-                                ->map(function ($field) {
-                                    return new Field($field['handle'], $field['field']);
-                                })
-                                ->first();
+                            // Handle sets stored in the legacy format...
+                            if (isset($set['fields'])) {
+                                $field = collect($set['fields'])
+                                    ->where('handle', $fieldHandle)
+                                    ->map(function ($field) {
+                                        return new Field($field['handle'], $field['field']);
+                                    })
+                                    ->first();
+                            } else {
+                                $field = collect($set['sets'])
+                                    ->flatMap(function ($tab) {
+                                        return $tab['fields'];
+                                    })
+                                    ->where('handle', $fieldHandle)
+                                    ->map(function ($field) {
+                                        return new Field($field['handle'], $field['field']);
+                                    })
+                                    ->first();
+                            }
 
                             if (! $field) {
                                 return $value;
