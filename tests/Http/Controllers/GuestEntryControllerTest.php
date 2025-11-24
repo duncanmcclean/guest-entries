@@ -2221,7 +2221,7 @@ it('can update entry with revisions enabled', function () {
     $this->assertSame($entry->collectionHandle(), 'albums');
 
     $this->assertSame($workingCopy->message(), 'Guest Entry Updated');
-    $this->assertSame($workingCopy->action(), 'revision');
+    $this->assertSame($workingCopy->action(), 'working');
     $this->assertSame($workingCopy->attributes(), [
         'title' => 'Allo Mate!',
         'slug' => 'allo-mate',

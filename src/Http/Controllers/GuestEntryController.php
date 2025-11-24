@@ -137,7 +137,6 @@ class GuestEntryController extends Controller
         if ($entry->revisionsEnabled()) {
             /** @var \Statamic\Revisions\Revision $revision */
             $revision = $entry->makeWorkingCopy();
-            $revision->id($entry->id());
 
             $revision->attributes([
                 'title' => $entry->get('title'),
@@ -155,7 +154,6 @@ class GuestEntryController extends Controller
             }
 
             $revision->message(__('Guest Entry Updated'));
-            $revision->action('revision');
 
             $revision->save();
             $entry->save();
