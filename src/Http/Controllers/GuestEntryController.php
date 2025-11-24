@@ -154,7 +154,6 @@ class GuestEntryController extends Controller
             }
 
             $revision->message(__('Guest Entry Updated'));
-            $revision->action('revision');
 
             $revision->save();
             $entry->save();
