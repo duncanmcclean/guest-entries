@@ -28,8 +28,8 @@
         "statamic/cms": "^6.0.0-alpha.16"
     },
     "require-dev": {
-        "pestphp/pest": "^3.0",
-        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^3.0 || ^4.1",
+        "orchestra/testbench": "^10.8",
         "spatie/test-time": "^1.2",
         "laravel/pint": "^1.18"
     },

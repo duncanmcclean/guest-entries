@@ -27,6 +27,7 @@ use Statamic\Facades\Stache;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
+use Statamic\Fieldtypes\Grid;
 use Statamic\Fieldtypes\Replicator;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
@@ -51,7 +52,7 @@ class GuestEntryController extends Controller
 
         // By setting the ID here, it can be used as a dynamic folder name in the Assets fieldtype.
         // However, this will only work for the Stache driver.
-        if (config('statamic.eloquent-driver.entries.driver' === 'file')) {
+        if (config('statamic.eloquent-driver.entries.driver', 'file') === 'file') {
             $entry->id(Stache::generateId());
         }
 
@@ -239,17 +240,50 @@ class GuestEntryController extends Controller
                 ->toArray();
         }
 
+        if ($field && $field->fieldtype() instanceof Grid) {
+            $gridField = $field;
+
+            return collect($value)
+                ->map(function ($rowValue, $index) use ($entry, $gridField, $request) {
+                    return collect($rowValue)
+                        ->map(function ($value, $fieldHandle) use ($entry, $gridField, $request, $index) {
+                            $field = $gridField->fieldtype()->fields()->get($fieldHandle);
+
+                            $key = "{$gridField->handle()}.{$index}.{$fieldHandle}";
+
+                            return $field
+                                ? $this->processField($entry, $field, $key, $value, $request)
+                                : $value;
+                        })
+                        ->toArray();
+                })
+                ->toArray();
+        }
+
         if ($field && $field->fieldtype() instanceof AssetFieldtype) {
             $value = $this->uploadFile($entry, $key, $field, $request);
         }
 
         if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
-            $format = $field->fieldtype()->config(
-                'format',
-                strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
-            );
+            if (is_array($value) && isset($value['start']) && isset($value['end'])) {
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value['start']) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
 
-            $value = Carbon::parse($value)->format($format);
+                $value = [
+                    'start' => Carbon::parse($value['start'])->format($format),
+                    'end' => Carbon::parse($value['end'])->format($format),
+                ];
+            } else {
+                // Handle single mode (value is a string)
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
+
+                $value = Carbon::parse($value)->format($format);
+            }
         }
 
         return $value;

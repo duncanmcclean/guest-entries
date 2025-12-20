@@ -1036,6 +1036,77 @@ it('can store entry and ensure date is in same format defined in blueprint', fun
     $this->assertStringContainsString('this-is-great.md', $entry->path());
 });
 
+it('can store entry with date range field', function () {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'event_dates',
+                            'field' => [
+                                'mode' => 'range',
+                                'time_enabled' => false,
+                                'time_required' => false,
+                                'earliest_date' => '1900-01-01',
+                                'format' => 'Y-m-d',
+                                'full_width' => false,
+                                'inline' => false,
+                                'columns' => 1,
+                                'rows' => 1,
+                                'display' => 'Event Dates',
+                                'type' => 'date',
+                                'icon' => 'date',
+                                'listable' => 'hidden',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->dated(false)->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'Conference Event',
+            'slug' => 'conference-event',
+            'event_dates' => [
+                'start' => '2024-06-01',
+                'end' => '2024-06-03',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'Conference Event');
+    $this->assertSame($entry->slug(), 'conference-event');
+
+    $this->assertIsArray($entry->get('event_dates'));
+    $this->assertSame($entry->get('event_dates')['start'], '2024-06-01');
+    $this->assertSame($entry->get('event_dates')['end'], '2024-06-03');
+});
+
 it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
 
@@ -1338,6 +1409,105 @@ it('can store entry with replicator field and an assets field inside the replica
 
     $this->assertIsString($entry->get('things')[0]['text']);
     $this->assertIsString($entry->get('things')[1]['document']);
+});
+
+it('can store entry with grid field', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'products',
+                            'field' => [
+                                'fields' => [
+                                    [
+                                        'handle' => 'product_name',
+                                        'field' => [
+                                            'type' => 'text',
+                                            'display' => 'Product Name',
+                                        ],
+                                    ],
+                                    [
+                                        'handle' => 'product_image',
+                                        'field' => [
+                                            'mode' => 'list',
+                                            'container' => 'assets',
+                                            'restrict' => false,
+                                            'allow_uploads' => true,
+                                            'show_filename' => true,
+                                            'display' => 'Product Image',
+                                            'type' => 'assets',
+                                            'icon' => 'assets',
+                                            'listable' => 'hidden',
+                                            'max_items' => 1,
+                                        ],
+                                    ],
+                                ],
+                                'type' => 'grid',
+                                'display' => 'Products',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'Product Review',
+            'slug' => 'product-review',
+            'products' => [
+                [
+                    'product_name' => 'Widget Pro',
+                    'product_image' => UploadedFile::fake()->image('widget.jpg'),
+                ],
+                [
+                    'product_name' => 'Gadget Max',
+                    'product_image' => UploadedFile::fake()->image('gadget.png'),
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'Product Review');
+    $this->assertSame($entry->slug(), 'product-review');
+
+    $this->assertIsArray($entry->get('products'));
+    $this->assertCount(2, $entry->get('products'));
+
+    $this->assertSame('Widget Pro', $entry->get('products')[0]['product_name']);
+    $this->assertIsString($entry->get('products')[0]['product_image']);
+    $this->assertStringContainsString('widget.jpg', $entry->get('products')[0]['product_image']);
+
+    $this->assertSame('Gadget Max', $entry->get('products')[1]['product_name']);
+    $this->assertIsString($entry->get('products')[1]['product_image']);
+    $this->assertStringContainsString('gadget.png', $entry->get('products')[1]['product_image']);
 });
 
 it('can update entry', function () {
@@ -1729,6 +1899,94 @@ it('can update entry and ensure date is in same format as defined in blueprint',
     $this->assertSame($entry->slug(), 'allo-mate');
 
     $this->assertStringContainsString('allo-mate.md', $entry->path());
+});
+
+it('can update entry with date range field', function () {
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'artist',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'tour_dates',
+                            'field' => [
+                                'mode' => 'range',
+                                'time_enabled' => false,
+                                'time_required' => false,
+                                'earliest_date' => '1900-01-01',
+                                'format' => 'Y-m-d',
+                                'full_width' => false,
+                                'inline' => false,
+                                'columns' => 1,
+                                'rows' => 1,
+                                'display' => 'Tour Dates',
+                                'type' => 'date',
+                                'icon' => 'date',
+                                'listable' => 'hidden',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->dated(false)->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'record_label' => 'Unknown',
+            'tour_dates' => [
+                'start' => '2024-09-15',
+                'end' => '2024-10-20',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Allo Mate!');
+    $this->assertSame($entry->get('record_label'), 'Unknown');
+    $this->assertSame($entry->slug(), 'allo-mate');
+
+    $this->assertIsArray($entry->get('tour_dates'));
+    $this->assertSame($entry->get('tour_dates')['start'], '2024-09-15');
+    $this->assertSame($entry->get('tour_dates')['end'], '2024-10-20');
 });
 
 it('can update entry and ensure file can be uploaded', function () {
@@ -2735,6 +2993,121 @@ it('can update entry with replicator field and an assets field inside the replic
 
     $this->assertIsString($entry->get('things')[0]['text']);
     $this->assertIsString($entry->get('things')[1]['document']);
+});
+
+it('can update entry with grid field', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'artist',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'tracks',
+                            'field' => [
+                                'fields' => [
+                                    [
+                                        'handle' => 'track_name',
+                                        'field' => [
+                                            'type' => 'text',
+                                            'display' => 'Track Name',
+                                        ],
+                                    ],
+                                    [
+                                        'handle' => 'track_artwork',
+                                        'field' => [
+                                            'mode' => 'list',
+                                            'container' => 'assets',
+                                            'restrict' => false,
+                                            'allow_uploads' => true,
+                                            'show_filename' => true,
+                                            'display' => 'Track Artwork',
+                                            'type' => 'assets',
+                                            'icon' => 'assets',
+                                            'listable' => 'hidden',
+                                            'max_items' => 1,
+                                        ],
+                                    ],
+                                ],
+                                'type' => 'grid',
+                                'display' => 'Tracks',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('album-id-123')
+        ->collection('albums')
+        ->slug('my-album')
+        ->data([
+            'title' => 'Greatest Hits',
+            'artist' => 'The Artist',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('album-id-123'),
+            'tracks' => [
+                [
+                    'track_name' => 'First Song',
+                    'track_artwork' => UploadedFile::fake()->image('first.jpg'),
+                ],
+                [
+                    'track_name' => 'Second Song',
+                    'track_artwork' => UploadedFile::fake()->image('second.png'),
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('album-id-123');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Greatest Hits');
+    $this->assertSame($entry->get('artist'), 'The Artist');
+    $this->assertSame($entry->slug(), 'my-album');
+
+    $this->assertIsArray($entry->get('tracks'));
+    $this->assertCount(2, $entry->get('tracks'));
+
+    $this->assertSame('First Song', $entry->get('tracks')[0]['track_name']);
+    $this->assertIsString($entry->get('tracks')[0]['track_artwork']);
+    $this->assertStringContainsString('first.jpg', $entry->get('tracks')[0]['track_artwork']);
+
+    $this->assertSame('Second Song', $entry->get('tracks')[1]['track_name']);
+    $this->assertIsString($entry->get('tracks')[1]['track_artwork']);
+    $this->assertStringContainsString('second.png', $entry->get('tracks')[1]['track_artwork']);
 });
 
 it('can destroy entry', function () {
