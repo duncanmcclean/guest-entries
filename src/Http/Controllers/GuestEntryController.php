@@ -25,7 +25,6 @@ use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
 use Statamic\Facades\Stache;
 use Statamic\Fields\Field;
-use Statamic\Fields\Fields;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
 use Statamic\Fieldtypes\Grid;
