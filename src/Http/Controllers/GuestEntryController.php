@@ -52,7 +52,7 @@ class GuestEntryController extends Controller
 
         // By setting the ID here, it can be used as a dynamic folder name in the Assets fieldtype.
         // However, this will only work for the Stache driver.
-        if (config('statamic.eloquent-driver.entries.driver' === 'file')) {
+        if (config('statamic.eloquent-driver.entries.driver', 'file') === 'file') {
             $entry->id(Stache::generateId());
         }
 
