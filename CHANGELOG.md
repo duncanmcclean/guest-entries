@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.5.2 (2025-12-20)
+
+### What's improved
+- PHP 8.5 compatibility #91 by @duncanmcclean
+
+### What's fixed
+- Fixed entry ID conditional #97 by @duncanmcclean
+- Added support for date ranges #96 by @duncanmcclean
+- Ensured that Grid fields are processed correctly #95 by @duncanmcclean
+
+
+
 ## v4.5.1 (2025-10-02)
 
 ### What's fixed
