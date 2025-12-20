@@ -1101,7 +1101,7 @@ it('can store entry with date range field', function () {
     $this->assertSame($entry->collectionHandle(), 'comments');
     $this->assertSame($entry->get('title'), 'Conference Event');
     $this->assertSame($entry->slug(), 'conference-event');
-    
+
     $this->assertIsArray($entry->get('event_dates'));
     $this->assertSame($entry->get('event_dates')['start'], '2024-06-01');
     $this->assertSame($entry->get('event_dates')['end'], '2024-06-03');
@@ -1889,7 +1889,7 @@ it('can update entry with date range field', function () {
     $this->assertSame($entry->get('title'), 'Allo Mate!');
     $this->assertSame($entry->get('record_label'), 'Unknown');
     $this->assertSame($entry->slug(), 'allo-mate');
-    
+
     $this->assertIsArray($entry->get('tour_dates'));
     $this->assertSame($entry->get('tour_dates')['start'], '2024-09-15');
     $this->assertSame($entry->get('tour_dates')['end'], '2024-10-20');
