@@ -27,6 +27,7 @@ use Statamic\Facades\Stache;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
+use Statamic\Fieldtypes\Grid;
 use Statamic\Fieldtypes\Replicator;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
@@ -236,6 +237,26 @@ class GuestEntryController extends Controller
                         ->merge([
                             'type' => $item['type'] ?? array_keys($replicatorField->fieldtype()->config('sets'))[0],
                         ])
+                        ->toArray();
+                })
+                ->toArray();
+        }
+
+        if ($field && $field->fieldtype() instanceof Grid) {
+            $gridField = $field;
+
+            return collect($value)
+                ->map(function ($rowValue, $index) use ($entry, $gridField, $request) {
+                    return collect($rowValue)
+                        ->map(function ($value, $fieldHandle) use ($entry, $gridField, $request, $index) {
+                            $field = $gridField->fieldtype()->fields()->get($fieldHandle);
+
+                            $key = "{$gridField->handle()}.{$index}.{$fieldHandle}";
+
+                            return $field
+                                ? $this->processField($entry, $field, $key, $value, $request)
+                                : $value;
+                        })
                         ->toArray();
                 })
                 ->toArray();
