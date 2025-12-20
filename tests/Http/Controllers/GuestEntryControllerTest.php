@@ -1036,6 +1036,77 @@ it('can store entry and ensure date is in same format defined in blueprint', fun
     $this->assertStringContainsString('this-is-great.md', $entry->path());
 });
 
+it('can store entry with date range field', function () {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'event_dates',
+                            'field' => [
+                                'mode' => 'range',
+                                'time_enabled' => false,
+                                'time_required' => false,
+                                'earliest_date' => '1900-01-01',
+                                'format' => 'Y-m-d',
+                                'full_width' => false,
+                                'inline' => false,
+                                'columns' => 1,
+                                'rows' => 1,
+                                'display' => 'Event Dates',
+                                'type' => 'date',
+                                'icon' => 'date',
+                                'listable' => 'hidden',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->dated(false)->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'Conference Event',
+            'slug' => 'conference-event',
+            'event_dates' => [
+                'start' => '2024-06-01',
+                'end' => '2024-06-03',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'comments');
+    $this->assertSame($entry->get('title'), 'Conference Event');
+    $this->assertSame($entry->slug(), 'conference-event');
+    
+    $this->assertIsArray($entry->get('event_dates'));
+    $this->assertSame($entry->get('event_dates')['start'], '2024-06-01');
+    $this->assertSame($entry->get('event_dates')['end'], '2024-06-03');
+});
+
 it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
 
@@ -1734,6 +1805,94 @@ it('can update entry and ensure date is in same format as defined in blueprint',
     $this->assertSame($entry->slug(), 'allo-mate');
 
     $this->assertStringContainsString('allo-mate.md', $entry->path());
+});
+
+it('can update entry with date range field', function () {
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'artist',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'tour_dates',
+                            'field' => [
+                                'mode' => 'range',
+                                'time_enabled' => false,
+                                'time_required' => false,
+                                'earliest_date' => '1900-01-01',
+                                'format' => 'Y-m-d',
+                                'full_width' => false,
+                                'inline' => false,
+                                'columns' => 1,
+                                'rows' => 1,
+                                'display' => 'Tour Dates',
+                                'type' => 'date',
+                                'icon' => 'date',
+                                'listable' => 'hidden',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->dated(false)->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'record_label' => 'Unknown',
+            'tour_dates' => [
+                'start' => '2024-09-15',
+                'end' => '2024-10-20',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->collectionHandle(), 'albums');
+    $this->assertSame($entry->get('title'), 'Allo Mate!');
+    $this->assertSame($entry->get('record_label'), 'Unknown');
+    $this->assertSame($entry->slug(), 'allo-mate');
+    
+    $this->assertIsArray($entry->get('tour_dates'));
+    $this->assertSame($entry->get('tour_dates')['start'], '2024-09-15');
+    $this->assertSame($entry->get('tour_dates')['end'], '2024-10-20');
 });
 
 it('can update entry and ensure file can be uploaded', function () {

@@ -246,12 +246,25 @@ class GuestEntryController extends Controller
         }
 
         if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
-            $format = $field->fieldtype()->config(
-                'format',
-                strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
-            );
+            if (is_array($value) && isset($value['start']) && isset($value['end'])) {
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value['start']) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
 
-            $value = Carbon::parse($value)->format($format);
+                $value = [
+                    'start' => Carbon::parse($value['start'])->format($format),
+                    'end' => Carbon::parse($value['end'])->format($format),
+                ];
+            } else {
+                // Handle single mode (value is a string)
+                $format = $field->fieldtype()->config(
+                    'format',
+                    strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
+                );
+
+                $value = Carbon::parse($value)->format($format);
+            }
         }
 
         return $value;
