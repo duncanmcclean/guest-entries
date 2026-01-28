@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.0.0 (2026-01-28)
+
+### What's new
+- Statamic 6 support
+
+### What's changed
+- Dropped support for PHP 8.2 and Laravel 11
+
+
+
 ## v5.0.0-alpha.2 (2025-12-20)
 
 ### What's fixed
