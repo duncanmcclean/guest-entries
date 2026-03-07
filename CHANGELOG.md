@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.1.0 (2026-03-07)
+
+### What's new
+- Supports Laravel 13 #98 by @duncanmcclean
+
+
+
 ## v5.0.0 (2026-01-28)
 
 ### What's new
