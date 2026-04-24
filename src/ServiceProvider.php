@@ -2,6 +2,9 @@
 
 namespace DuncanMcClean\GuestEntries;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
@@ -23,5 +26,9 @@ class ServiceProvider extends AddonServiceProvider
         $this->publishes([
             __DIR__.'/../config/guest-entries.php' => config_path('guest-entries.php'),
         ], 'guest-entries-config');
+
+        RateLimiter::for('guest-entries', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
     }
 }
