@@ -29,6 +29,7 @@ use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
 use Statamic\Fieldtypes\Grid;
 use Statamic\Fieldtypes\Replicator;
+use Statamic\Revisions\Revision;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
 
@@ -66,7 +67,7 @@ class GuestEntryController extends Controller
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
-            /** @var \Statamic\Fields\Field $blueprintField */
+            /** @var Field $blueprintField */
             $field = $collection->entryBlueprint()->field($key);
 
             $entry->set(
@@ -127,7 +128,7 @@ class GuestEntryController extends Controller
         }
 
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
-            /** @var \Statamic\Fields\Field $blueprintField */
+            /** @var Field $blueprintField */
             $field = $entry->blueprint()->field($key);
 
             $data[$key] = $field
@@ -136,7 +137,7 @@ class GuestEntryController extends Controller
         }
 
         if ($entry->revisionsEnabled()) {
-            /** @var \Statamic\Revisions\Revision $revision */
+            /** @var Revision $revision */
             $revision = $entry->makeWorkingCopy();
             $revision->id($entry->id());
 

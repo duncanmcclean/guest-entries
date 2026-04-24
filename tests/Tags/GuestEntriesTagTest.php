@@ -66,7 +66,7 @@ it('throws an exception when attempting to retrurn create guest entry form if no
     ');
 
     $usage = $tag->create();
-})->throws(\Exception::class);
+})->throws(Exception::class);
 
 it('throws an exception when attempting to return create guest entry form when collection does not exist', function () use (&$tag) {
     $tag->setParameters([
@@ -165,7 +165,7 @@ it('throws an exception when attempting to return update guest entry create form
     ');
 
     $usage = $tag->update();
-})->throws(\Exception::class);
+})->throws(Exception::class);
 
 it('throws an exception when attempting to return update guest entry form if no ID is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -220,7 +220,7 @@ it('throws an exception when attempting to return update guest entry form if no 
     ');
 
     $usage = $tag->update();
-})->throws(\Exception::class);
+})->throws(Exception::class);
 
 it('throws an exception when attempting to return update guest entry form when entry ID does not exist', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -388,7 +388,7 @@ it('throws an exception when attempting to return delete guest entry form if no 
     ');
 
     $usage = $tag->delete();
-})->throws(\Exception::class);
+})->throws(Exception::class);
 
 it('throws an exception when attempting to return delete guest entry form when collection does not exist', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -435,7 +435,7 @@ it('throws an exception when attempting to return delete guest entry form if no 
     ');
 
     $usage = $tag->delete();
-})->throws(\Exception::class);
+})->throws(Exception::class);
 
 it('throws an exception when attempting to return delete guest entry form when entry ID does not exist', function () use (&$tag) {
     Collection::make('guestbook')->save();
