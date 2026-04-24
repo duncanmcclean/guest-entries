@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.6.0 (2026-04-24)
+
+### What's new
+- Added rate limiting to guest entry endpoints #99 by @duncanmcclean
+
+### What's fixed
+- Return 422 for invalid form parameters instead of 500 #100 by @duncanmcclean
+
+
+
 ## v4.5.2 (2025-12-20)
 
 ### What's improved
