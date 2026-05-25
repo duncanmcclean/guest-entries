@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    # Supply chain attack mitigation: wait 7 days before updating
+    # to allow community detection of compromised releases
+    cooldown:
+      default-days: 7

@@ -1,29 +1,34 @@
 name: Release
 
-# This workflow tags a release, builds front-end assets and sends various notifications & webhooks when a release has been created.
-# How to use:
-# 1. Create a git tag - `git tag <version number>`
-# 2. Push tags to the origin - `git push origin --tags`
-# 3. This Github Action will do its stuff...
-# 4. Then it will pull the latest notes from CHANGELOG.md and add them to the release.
-
 on:
   push:
     tags:
       - "v*"
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release:
     name: Prepare & Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Create releases
+      issues: write # Comment on related issues
+      pull-requests: write # Comment on related PRs
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
         with:
-          php-version: 8.2
+          php-version: 8.4
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick
           tools: composer:v2
 
@@ -32,23 +37,35 @@ jobs:
 
       - name: Get Changelog
         id: changelog
-        uses: statamic/changelog-action@v1
+        uses: statamic/changelog-action@5d112d0d790cdeeb5adca3e584e37edc474ab51b # v1
         with:
           version: ${{ github.ref }}
 
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Determine prerelease status
+        id: prerelease
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          body: ${{ steps.changelog.outputs.text }}
-          prerelease: ${{ contains(github.ref, '-beta') }}
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" == *"-alpha"* ]] || [[ "$REF" == *"-beta"* ]]; then
+            echo "flag=--prerelease" >> $GITHUB_OUTPUT
+          else
+            echo "flag=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+          CHANGELOG: ${{ steps.changelog.outputs.text }}
+          PRERELEASE_FLAG: ${{ steps.prerelease.outputs.flag }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --title "$TAG_NAME" \
+            --notes "$CHANGELOG" \
+            $PRERELEASE_FLAG
 
       - name: Comment on related issues
-        uses: duncanmcclean/post-release-comments@v1.0.6
+        uses: duncanmcclean/post-release-comments@ee2d062e73bd6f0898f36ed892953ed88134cc19 # v1.0.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
