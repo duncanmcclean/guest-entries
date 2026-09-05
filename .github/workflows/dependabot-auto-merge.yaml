@@ -3,15 +3,21 @@ name: Dependabot Auto Merge
 on:
   pull_request:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   dependabot:
+    name: Auto Merge
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    permissions:
+      contents: write # Merge the PR
+      pull-requests: write # Merge the PR
 
     steps:
       - name: Dependabot metadata
