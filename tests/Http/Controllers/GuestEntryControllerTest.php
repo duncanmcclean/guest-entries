@@ -5,6 +5,7 @@ use DuncanMcClean\GuestEntries\Events\GuestEntryDeleted;
 use DuncanMcClean\GuestEntries\Events\GuestEntryUpdated;
 use DuncanMcClean\GuestEntries\Tests\Fixtures\FirstCustomStoreRequest;
 use DuncanMcClean\GuestEntries\Tests\Fixtures\FirstCustomUpdateRequest;
+use DuncanMcClean\GuestEntries\Tests\Fixtures\NotAFormRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
@@ -201,6 +202,26 @@ it('can store entry with custom form request', function () {
         ->assertSessionHasErrors('description');
 });
 
+it('cant store entry with a request class that is not a form request', function () {
+    Config::set('guest-entries.disable_form_parameter_validation', true);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_request' => NotAFormRequest::class,
+            '_redirect' => '/thanks',
+            '_error_redirect' => '/error',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertServerError();
+
+    $this->assertFalse(NotAFormRequest::$instantiated);
+    $this->assertNull(Entry::all()->last());
+});
+
 it('cant store entry if collection has not been whitelisted', function () {
     Collection::make('smth')->save();
 
@@ -235,6 +256,87 @@ it('can store entry and user is redirected', function () {
     $this->assertSame($entry->collectionHandle(), 'comments');
     $this->assertSame($entry->get('title'), 'This is great');
     $this->assertSame($entry->slug(), 'this-is-great');
+});
+
+it('can store entry and user is redirected to an external url when form parameter validation is enabled', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            '_redirect' => encrypt('https://example.com/thanks'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect('https://example.com/thanks');
+});
+
+it('can store entry and user is redirected to an internal url when form parameter validation is disabled', function (string $redirect) {
+    Config::set('guest-entries.disable_form_parameter_validation', true);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_request' => 'Empty',
+            '_redirect' => $redirect,
+            '_error_redirect' => '/error',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect($redirect);
+
+    $this->assertNotNull(Entry::all()->last());
+})->with([
+    'relative path' => '/bobs-your-uncle',
+    'relative path with query string' => '/bobs-your-uncle?foo=bar',
+    'absolute url on the same host' => 'http://localhost/bobs-your-uncle',
+]);
+
+it('can store entry but user is not redirected to an external url when form parameter validation is disabled', function (string $redirect) {
+    Config::set('guest-entries.disable_form_parameter_validation', true);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->from('/comments/create')
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_request' => 'Empty',
+            '_redirect' => $redirect,
+            '_error_redirect' => '/error',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect('/comments/create');
+
+    $this->assertNotNull(Entry::all()->last());
+})->with([
+    'absolute url' => 'https://example.com',
+    'protocol relative url' => '//example.com',
+    'backslash url' => '/\\example.com',
+    'url with whitespace' => "/\t/example.com",
+    'javascript url' => 'javascript:alert(1)',
+]);
+
+it('cant store entry and user is not redirected to an external error url when form parameter validation is disabled', function () {
+    Config::set('guest-entries.disable_form_parameter_validation', true);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->from('/comments/create')
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => 'comments',
+            '_request' => FirstCustomStoreRequest::class,
+            '_redirect' => '/thanks',
+            '_error_redirect' => 'https://example.com',
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+        ])
+        ->assertRedirect('/comments/create')
+        ->assertSessionHasErrors('description');
 });
 
 it('can store entry and ensure ignored parameters are not saved', function () {

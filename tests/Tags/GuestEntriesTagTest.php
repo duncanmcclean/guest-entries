@@ -104,6 +104,19 @@ it('returns create guest entry form with redirect and error_redirect hidden inpu
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
 });
 
+it('returns create guest entry form with escaped hidden inputs', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'redirect' => '"><script>alert(1)</script>',
+    ]);
+
+    $usage = $tag->create();
+
+    assertStringContainsString('<input type="hidden" name="_redirect" value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"', $usage);
+});
+
 it('returns update guest entry form', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
