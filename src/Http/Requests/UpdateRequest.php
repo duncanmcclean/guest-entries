@@ -8,11 +8,12 @@ class UpdateRequest extends FormRequest
 {
     use Concerns\AcceptsFormRequests,
         Concerns\HandleFailedValidation,
+        Concerns\ResolvesEntry,
         Concerns\WhitelistedCollections;
 
     public function authorize()
     {
-        if (! $this->collectionIsWhitelisted($this->get('_collection'))) {
+        if (! $this->collectionIsWhitelisted($this->get('_collection')) || ! $this->entryBelongsToCollection()) {
             return false;
         }
 

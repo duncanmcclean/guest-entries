@@ -7,11 +7,13 @@ use Illuminate\Foundation\Http\FormRequest;
 class DestroyRequest extends FormRequest
 {
     use Concerns\HandleFailedValidation,
+        Concerns\ResolvesEntry,
         Concerns\WhitelistedCollections;
 
     public function authorize()
     {
-        return $this->collectionIsWhitelisted($this->get('_collection'));
+        return $this->collectionIsWhitelisted($this->get('_collection'))
+            && $this->entryBelongsToCollection();
     }
 
     public function rules()

@@ -3,6 +3,7 @@
 namespace DuncanMcClean\GuestEntries\Http\Controllers;
 
 use Carbon\Carbon;
+use Carbon\Exceptions\InvalidFormatException;
 use DuncanMcClean\GuestEntries\Events\GuestEntryCreated;
 use DuncanMcClean\GuestEntries\Events\GuestEntryDeleted;
 use DuncanMcClean\GuestEntries\Events\GuestEntryUpdated;
@@ -14,16 +15,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Statamic\Contracts\Assets\AssetContainer as AssetContainerContract;
+use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
 use Statamic\Facades\Stache;
+use Statamic\Facades\User;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
@@ -33,10 +38,13 @@ use Statamic\Revisions\Revision;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
 use Statamic\Support\Svg;
+use TypeError;
 
 class GuestEntryController extends Controller
 {
     protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
+
+    protected $reservedParameters = ['id', 'origin', 'blueprint', 'template', 'layout', 'redirect', 'protect', 'author', 'order', 'updated_by', 'updated_at'];
 
     public function store(StoreRequest $request)
     {
@@ -60,7 +68,7 @@ class GuestEntryController extends Controller
 
         if ($collection->dated()) {
             $this->ignoredParameters[] = 'date';
-            $entry->date($request->get('date') ?? now());
+            $this->setEntryDate($entry, $request->get('date') ?? now());
         }
 
         if ($request->has('published')) {
@@ -70,6 +78,10 @@ class GuestEntryController extends Controller
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
             /** @var Field $blueprintField */
             $field = $collection->entryBlueprint()->field($key);
+
+            if (! $field && in_array($key, $this->reservedParameters)) {
+                continue;
+            }
 
             $entry->set(
                 $key,
@@ -104,6 +116,17 @@ class GuestEntryController extends Controller
         return $this->withSuccess($request);
     }
 
+    private function setEntryDate($entry, mixed $date): void
+    {
+        try {
+            $entry->date($date);
+        } catch (InvalidFormatException|TypeError) {
+            throw ValidationException::withMessages([
+                'date' => __('validation.date', ['attribute' => 'date']),
+            ]);
+        }
+    }
+
     public function update(UpdateRequest $request)
     {
         if (! $this->honeypotPassed($request)) {
@@ -111,7 +134,7 @@ class GuestEntryController extends Controller
         }
 
         /** @var \Statamic\Entries\Entry $entry */
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         /** @var array $data */
         $data = $entry->data()->toArray();
@@ -132,6 +155,10 @@ class GuestEntryController extends Controller
             /** @var Field $blueprintField */
             $field = $entry->blueprint()->field($key);
 
+            if (! $field && in_array($key, $this->reservedParameters)) {
+                continue;
+            }
+
             $data[$key] = $field
                 ? $this->processField($entry, $field, $key, $value, $request)
                 : $value;
@@ -149,7 +176,7 @@ class GuestEntryController extends Controller
             ]);
 
             if ($entry->collection()->dated() && $request->has('date')) {
-                $revision->date($request->get('date'));
+                $revision->date($this->parseDate('date', $request->get('date')));
             }
 
             if ($request->user()) {
@@ -161,12 +188,11 @@ class GuestEntryController extends Controller
             $revision->save();
             $entry->save();
         } else {
-            $entry->data($data);
-
             if ($entry->collection()->dated() && $request->has('date')) {
-                $entry->date($request->get('date'));
+                $this->setEntryDate($entry, $request->get('date'));
             }
 
+            $entry->data($data);
             $entry->touch();
         }
 
@@ -181,7 +207,7 @@ class GuestEntryController extends Controller
             return $this->withSuccess($request);
         }
 
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         $entry->delete();
 
@@ -194,39 +220,28 @@ class GuestEntryController extends Controller
     {
         if ($field && $field->fieldtype() instanceof Replicator) {
             $replicatorField = $field;
+            $sets = $replicatorField->fieldtype()->flattenedSetsConfig();
 
             return collect($value)
-                ->map(function ($item, $index) use ($entry, $replicatorField, $request) {
-                    $set = $item['type'] ?? array_values($replicatorField->fieldtype()->config('sets'))[0];
+                ->map(function ($item, $index) use ($entry, $replicatorField, $sets, $request) {
+                    $set = $item['type'] ?? $sets->keys()->first();
+
+                    if (! is_string($set) || ! $sets->has($set)) {
+                        $key = "{$replicatorField->handle()}.{$index}.type";
+
+                        throw ValidationException::withMessages([
+                            $key => __('validation.in', ['attribute' => $key]),
+                        ]);
+                    }
+
+                    $setFields = $replicatorField->fieldtype()->fields($set, $index);
 
                     return collect($item)
                         ->reject(function ($value, $fieldHandle) {
                             return $fieldHandle === 'type';
                         })
-                        ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $set, $request) {
-                            // Handle sets stored in the legacy format...
-                            if (isset($set['fields'])) {
-                                $field = collect($set['fields'])
-                                    ->where('handle', $fieldHandle)
-                                    ->map(function ($field) {
-                                        return new Field($field['handle'], $field['field']);
-                                    })
-                                    ->first();
-                            } else {
-                                $field = collect($set['sets'])
-                                    ->flatMap(function ($tab) {
-                                        return $tab['fields'];
-                                    })
-                                    ->where('handle', $fieldHandle)
-                                    ->map(function ($field) {
-                                        return new Field($field['handle'], $field['field']);
-                                    })
-                                    ->first();
-                            }
-
-                            if (! $field) {
-                                return $value;
-                            }
+                        ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $setFields, $request) {
+                            $field = $setFields->get($fieldHandle);
 
                             $key = "{$replicatorField->handle()}.{$index}.{$fieldHandle}";
 
@@ -234,9 +249,7 @@ class GuestEntryController extends Controller
                                 ? $this->processField($entry, $field, $key, $value, $request)
                                 : $value;
                         })
-                        ->merge([
-                            'type' => $item['type'] ?? array_keys($replicatorField->fieldtype()->config('sets'))[0],
-                        ])
+                        ->merge(['type' => $set])
                         ->toArray();
                 })
                 ->toArray();
@@ -268,27 +281,43 @@ class GuestEntryController extends Controller
 
         if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
             if (is_array($value) && isset($value['start']) && isset($value['end'])) {
+                $start = $this->parseDate("{$key}.start", $value['start']);
+                $end = $this->parseDate("{$key}.end", $value['end']);
+
                 $format = $field->fieldtype()->config(
                     'format',
                     strlen($value['start']) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
                 );
 
                 $value = [
-                    'start' => Carbon::parse($value['start'])->format($format),
-                    'end' => Carbon::parse($value['end'])->format($format),
+                    'start' => $start->format($format),
+                    'end' => $end->format($format),
                 ];
             } else {
                 // Handle single mode (value is a string)
+                $date = $this->parseDate($key, $value);
+
                 $format = $field->fieldtype()->config(
                     'format',
                     strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
                 );
 
-                $value = Carbon::parse($value)->format($format);
+                $value = $date->format($format);
             }
         }
 
         return $value;
+    }
+
+    private function parseDate(string $key, mixed $value): Carbon
+    {
+        try {
+            return Carbon::parse($value);
+        } catch (InvalidFormatException|TypeError) {
+            throw ValidationException::withMessages([
+                $key => __('validation.date', ['attribute' => $key]),
+            ]);
+        }
     }
 
     protected function generateEntrySlug($entry): string
@@ -358,8 +387,8 @@ class GuestEntryController extends Controller
             $folder = match (true) {
                 ! is_null($field->get('folder')) => $field->get('folder'),
                 $field->get('dynamic') === 'id' => $entry->id(),
-                $field->get('dynamic') === 'slug' => $entry->slug() ?? $request->get('slug') ?? Str::slug($request->get('title'), '-'),
-                $field->get('dynamic') === 'author' => $entry->author ?? $request->get('author'),
+                $field->get('dynamic') === 'slug' => Str::slug($entry->slug() ?? $request->get('slug') ?? $request->get('title'), '-', $entry->site()->lang()),
+                $field->get('dynamic') === 'author' => $this->authorFolder($entry, $request),
                 default => '',
             };
 
@@ -386,10 +415,7 @@ class GuestEntryController extends Controller
             $files[] = $path;
         }
 
-        // Handle existing files.
-        $existingFiles = $request->get($key, []);
-
-        foreach ($existingFiles as $existingFile) {
+        foreach ($this->existingFiles($entry, $key, $field, $assetContainer, $request) as $existingFile) {
             $files[] = $existingFile;
         }
 
@@ -410,6 +436,39 @@ class GuestEntryController extends Controller
             || $file->getMimeType() === 'image/svg+xml';
     }
 
+    private function authorFolder(EntryContract $entry, Request $request): ?string
+    {
+        $author = SupportCollection::wrap($entry->author ?? $request->get('author'))->first();
+
+        if (is_object($author)) {
+            return $author->id();
+        }
+
+        return User::find($author)?->id();
+    }
+
+    private function existingFiles(EntryContract $entry, string $key, Field $field, AssetContainerContract $assetContainer, Request $request): array
+    {
+        $filesOnEntry = Arr::flatten(Arr::wrap($entry->value(Str::before($key, '.'))));
+
+        return collect(Arr::wrap($request->get($key)))
+            ->filter(fn ($path) => is_string($path) && $assetContainer->asset($path))
+            ->filter(fn (string $path) => in_array($path, $filesOnEntry) || $this->isWithinFolder($path, $field->get('folder')))
+            ->values()
+            ->all();
+    }
+
+    private function isWithinFolder(string $path, ?string $folder): bool
+    {
+        $folder = trim((string) $folder, '/');
+
+        if ($folder === '') {
+            return true;
+        }
+
+        return Str::startsWith($path, "{$folder}/");
+    }
+
     protected function honeypotPassed(Request $request): ?bool
     {
         $honeypot = config('guest-entries.honeypot');
@@ -423,7 +482,9 @@ class GuestEntryController extends Controller
 
     protected function guessSiteFromRequest($request): Site
     {
-        if ($site = $request->get('site')) {
+        $site = $request->get('site');
+
+        if (is_string($site) && SiteFacade::get($site)) {
             return SiteFacade::get($site);
         }
 
