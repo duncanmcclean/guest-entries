@@ -11,15 +11,13 @@ trait AcceptsFormRequests
     public function buildFormRequest(string $formRequestClass, Request $request): ?FormRequest
     {
         $formRequest = match (true) {
-            class_exists($class = $formRequestClass) => $class,
-            class_exists($class = "App\\Http\\Requests\\$formRequestClass") => $class,
+            is_subclass_of($formRequestClass, FormRequest::class) => $formRequestClass,
+            is_subclass_of($class = "App\\Http\\Requests\\$formRequestClass", FormRequest::class) => $class,
             default => null,
         };
 
         if ($formRequest) {
-            $class = new $class;
-
-            $request = FormRequest::createFrom($request, $class);
+            $request = FormRequest::createFrom($request, new $formRequest);
             $request->setContainer(app())->setRedirector(app()->make(Redirector::class));
 
             return $request;

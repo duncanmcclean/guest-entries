@@ -7,6 +7,8 @@ use DuncanMcClean\GuestEntries\Exceptions\InvalidFormParametersException;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
+use Statamic\Facades\Site;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class EnsureFormParametersArriveIntact
@@ -49,8 +51,8 @@ class EnsureFormParametersArriveIntact
         if (config('guest-entries.disable_form_parameter_validation')) {
             $request->merge([
                 '_request' => encrypt($request->get('_request') ?? $request->header('referer') ?? '/'),
-                '_error_redirect' => encrypt($request->get('_error_redirect') ?? $request->header('referer') ?? '/'),
-                '_redirect' => encrypt($request->get('_redirect') ?? 'Empty'),
+                '_error_redirect' => encrypt($this->internalUrl($request->get('_error_redirect'), $request) ?? $request->header('referer') ?? '/'),
+                '_redirect' => encrypt($this->internalUrl($request->get('_redirect'), $request) ?? 'Empty'),
                 '_collection' => encrypt($request->get('_collection') ?? 'Empty'),
                 '_id' => encrypt($request->get('_id') ?? 'Empty'),
             ]);
@@ -79,5 +81,35 @@ class EnsureFormParametersArriveIntact
         ]);
 
         return $next($request);
+    }
+
+    private function internalUrl(mixed $url, Request $request): ?string
+    {
+        if (! is_string($url)) {
+            return null;
+        }
+
+        $normalizedUrl = str_replace('\\', '/', preg_replace('/[\x00-\x20]/', '', $url));
+
+        if (Str::startsWith($normalizedUrl, '//')) {
+            return null;
+        }
+
+        $scheme = parse_url($normalizedUrl, PHP_URL_SCHEME);
+        $host = parse_url($normalizedUrl, PHP_URL_HOST);
+
+        if (is_null($scheme) && is_null($host)) {
+            return $url;
+        }
+
+        $internalHosts = Site::all()
+            ->map(fn ($site) => parse_url($site->absoluteUrl(), PHP_URL_HOST))
+            ->push($request->getHost());
+
+        if (in_array($scheme, ['http', 'https']) && $internalHosts->contains($host)) {
+            return $url;
+        }
+
+        return null;
     }
 }

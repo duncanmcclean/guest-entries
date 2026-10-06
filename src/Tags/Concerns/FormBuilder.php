@@ -104,27 +104,27 @@ trait FormBuilder
 
     protected function collectionField()
     {
-        return '<input type="hidden" name="_collection" value="'.$this->collectionValue().'" />';
+        return '<input type="hidden" name="_collection" value="'.e($this->collectionValue()).'" />';
     }
 
     protected function idField()
     {
-        return '<input type="hidden" name="_id" value="'.$this->idValue().'" />';
+        return '<input type="hidden" name="_id" value="'.e($this->idValue()).'" />';
     }
 
     protected function redirectField()
     {
-        return '<input type="hidden" name="_redirect" value="'.$this->redirectValue().'" />';
+        return '<input type="hidden" name="_redirect" value="'.e($this->redirectValue()).'" />';
     }
 
     protected function errorRedirectField()
     {
-        return '<input type="hidden" name="_error_redirect" value="'.$this->errorRedirectValue().'" />';
+        return '<input type="hidden" name="_error_redirect" value="'.e($this->errorRedirectValue()).'" />';
     }
 
     protected function requestField()
     {
-        return '<input type="hidden" name="_request" value="'.$this->requestValue().'" />';
+        return '<input type="hidden" name="_request" value="'.e($this->requestValue()).'" />';
     }
 
     protected function params(): array
