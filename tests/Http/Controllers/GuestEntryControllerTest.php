@@ -689,7 +689,7 @@ it('can store entry and with file and ensure dynamic folder is used', function (
     $this->assertStringContainsString('-foobar.png', $entry->get('attachment'));
 });
 
-it('can store entry and ensure uploaded SVG file is sanitized', function () {
+it('can store entry and ensure uploaded SVG file is sanitized', function (string $filename, ?string $mimeType) {
     AssetContainer::make('assets')->disk('local')->save();
 
     Blueprint::make('comments')
@@ -740,8 +740,9 @@ it('can store entry and ensure uploaded SVG file is sanitized', function () {
             '_collection' => encrypt('comments'),
             'title' => 'This is great',
             'slug' => 'this-is-great',
-            'attachment' => UploadedFile::fake()->createWithContent('foobar.svg',
-                '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>'),
+            'attachment' => UploadedFile::fake()->createWithContent($filename,
+                '<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><script type="text/javascript">alert(`Bad stuff could go in here.`);</script></svg>')
+                ->mimeType($mimeType),
         ])
         ->assertRedirect();
 
@@ -760,7 +761,13 @@ it('can store entry and ensure uploaded SVG file is sanitized', function () {
     $this->assertStringNotContainsString('<script', $file);
     $this->assertStringNotContainsString('Bad stuff could go in here.', $file);
     $this->assertStringNotContainsString('</script>', $file);
-});
+})->with([
+    'lowercase extension' => ['foobar.svg', null],
+    'uppercase extension' => ['foobar.SVG', null],
+    'mixed case extension' => ['foobar.Svg', null],
+    'extension with trailing whitespace' => ['foobar.svg ', null],
+    'svg mime type' => ['foobar.png', 'image/svg+xml'],
+]);
 
 it('cant store an entry when uploading a PHP file', function () {
     AssetContainer::make('assets')->disk('local')->save();

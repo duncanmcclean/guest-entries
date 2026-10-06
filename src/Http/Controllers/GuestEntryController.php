@@ -11,13 +11,13 @@ use DuncanMcClean\GuestEntries\Http\Requests\DestroyRequest;
 use DuncanMcClean\GuestEntries\Http\Requests\StoreRequest;
 use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Rhukster\DomSanitizer\DOMSanitizer;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Collection;
@@ -32,6 +32,7 @@ use Statamic\Fieldtypes\Replicator;
 use Statamic\Revisions\Revision;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
+use Statamic\Support\Svg;
 
 class GuestEntryController extends Controller
 {
@@ -350,14 +351,8 @@ class GuestEntryController extends Controller
 
         /* @var \Illuminate\Http\Testing\File $file */
         foreach ($uploadedFiles as $uploadedFile) {
-            if (Str::endsWith($uploadedFile->getClientOriginalExtension(), 'svg')) {
-                $sanitizer = new DOMSanitizer(DOMSanitizer::SVG);
-
-                $contents = $sanitizer->sanitize($svg = File::get($uploadedFile->getPathname()), [
-                    'remove-xml-tags' => ! Str::startsWith($svg, '<?xml'),
-                ]);
-
-                File::put($uploadedFile->getPathname(), $contents);
+            if ($this->isSvg($uploadedFile)) {
+                File::put($uploadedFile->getPathname(), Svg::sanitize(File::get($uploadedFile->getPathname())));
             }
 
             $folder = match (true) {
@@ -407,6 +402,12 @@ class GuestEntryController extends Controller
         }
 
         return $files;
+    }
+
+    private function isSvg(UploadedFile $file): bool
+    {
+        return Str::lower(trim($file->getClientOriginalExtension())) === 'svg'
+            || $file->getMimeType() === 'image/svg+xml';
     }
 
     protected function honeypotPassed(Request $request): ?bool
