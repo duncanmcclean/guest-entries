@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Rhukster\DomSanitizer\DOMSanitizer;
+use Statamic\Contracts\Assets\AssetContainer as AssetContainerContract;
 use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
@@ -394,10 +395,7 @@ class GuestEntryController extends Controller
             $files[] = $path;
         }
 
-        // Handle existing files.
-        $existingFiles = $request->get($key, []);
-
-        foreach ($existingFiles as $existingFile) {
+        foreach ($this->existingFiles($entry, $key, $field, $assetContainer, $request) as $existingFile) {
             $files[] = $existingFile;
         }
 
@@ -421,6 +419,28 @@ class GuestEntryController extends Controller
         }
 
         return User::find($author)?->id();
+    }
+
+    private function existingFiles(EntryContract $entry, string $key, Field $field, AssetContainerContract $assetContainer, Request $request): array
+    {
+        $filesOnEntry = Arr::flatten(Arr::wrap($entry->value(Str::before($key, '.'))));
+
+        return collect(Arr::wrap($request->get($key)))
+            ->filter(fn ($path) => is_string($path) && $assetContainer->asset($path))
+            ->filter(fn (string $path) => in_array($path, $filesOnEntry) || $this->isWithinFolder($path, $field->get('folder')))
+            ->values()
+            ->all();
+    }
+
+    private function isWithinFolder(string $path, ?string $folder): bool
+    {
+        $folder = trim((string) $folder, '/');
+
+        if ($folder === '') {
+            return true;
+        }
+
+        return Str::startsWith($path, "{$folder}/");
     }
 
     protected function honeypotPassed(Request $request): ?bool
