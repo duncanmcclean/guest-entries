@@ -896,6 +896,7 @@ it('can store entry and ensure multiple files can be uploaded', function () {
 it('can store entry with one uploaded file and one existing file', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
+    Storage::disk('local')->put('blah-blah-blah.png', '');
     Asset::make()->container('assets')->path('blah-blah-blah.png')->save();
 
     Blueprint::make('comments')
@@ -967,6 +968,175 @@ it('can store entry with one uploaded file and one existing file', function () {
 
     $this->assertStringContainsString('-foobar.png', $entry->get('attachments')[0]);
     $this->assertStringContainsString('blah-blah-blah.png', $entry->get('attachments')[1]);
+});
+
+it('can store entry with an existing file that isnt wrapped in an array', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Storage::disk('local')->put('blah-blah-blah.png', '');
+    Asset::make()->container('assets')->path('blah-blah-blah.png')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'type' => 'assets',
+                                'container' => 'assets',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store', ['attachments' => 'blah-blah-blah.png']), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'attachments' => [UploadedFile::fake()->create('foobar.png')],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertCount(2, $entry->get('attachments'));
+    $this->assertStringContainsString('-foobar.png', $entry->get('attachments')[0]);
+    $this->assertSame('blah-blah-blah.png', $entry->get('attachments')[1]);
+});
+
+it('cant store entry with existing files that arent assets in the fields container', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+    AssetContainer::make('private')->disk('public')->save();
+
+    Storage::disk('local')->put('blah-blah-blah.png', '');
+    Asset::make()->container('assets')->path('blah-blah-blah.png')->save();
+    Storage::disk('public')->put('secret.pdf', '');
+    Asset::make()->container('private')->path('secret.pdf')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'type' => 'assets',
+                                'container' => 'assets',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'attachments' => [
+                UploadedFile::fake()->create('foobar.png'),
+                'blah-blah-blah.png',
+                'secret.pdf',
+                'not-an-asset.png',
+                ['nested' => 'blah-blah-blah.png'],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertCount(2, $entry->get('attachments'));
+    $this->assertStringContainsString('-foobar.png', $entry->get('attachments')[0]);
+    $this->assertSame('blah-blah-blah.png', $entry->get('attachments')[1]);
+});
+
+it('cant store entry with existing files outside of the fields folder', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Storage::disk('local')->put('foo/blah-blah-blah.png', '');
+    Asset::make()->container('assets')->path('foo/blah-blah-blah.png')->save();
+    Storage::disk('local')->put('private/secret.pdf', '');
+    Asset::make()->container('assets')->path('private/secret.pdf')->save();
+    Storage::disk('local')->put('foobar/secret.pdf', '');
+    Asset::make()->container('assets')->path('foobar/secret.pdf')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'type' => 'assets',
+                                'container' => 'assets',
+                                'folder' => 'foo',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'attachments' => [
+                UploadedFile::fake()->create('foobar.png'),
+                'foo/blah-blah-blah.png',
+                'private/secret.pdf',
+                'foobar/secret.pdf',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertCount(2, $entry->get('attachments'));
+    $this->assertStringContainsString('foo/', $entry->get('attachments')[0]);
+    $this->assertSame('foo/blah-blah-blah.png', $entry->get('attachments')[1]);
 });
 
 it('can store entry and ensure date is in same format defined in blueprint', function () {
@@ -2352,6 +2522,7 @@ it('can update entry and ensure multiple files can be uploaded', function () {
 it('can update entry with one uploaded file and one existing file', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
+    Storage::disk('local')->put('blah-blah-blah.png', '');
     Asset::make()->container('assets')->path('blah-blah-blah.png')->save();
 
     Blueprint::make('albums')
@@ -2444,6 +2615,142 @@ it('can update entry with one uploaded file and one existing file', function () 
 
     $this->assertStringContainsString('-foobar.png', $entry->get('attachments')[0]);
     $this->assertStringContainsString('blah-blah-blah.png', $entry->get('attachments')[1]);
+});
+
+it('can update entry and keep existing files outside of the fields folder that are already on the entry', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Storage::disk('local')->put('foo/blah-blah-blah.png', '');
+    Asset::make()->container('assets')->path('foo/blah-blah-blah.png')->save();
+    Storage::disk('local')->put('elsewhere/existing.png', '');
+    Asset::make()->container('assets')->path('elsewhere/existing.png')->save();
+    Storage::disk('local')->put('private/secret.pdf', '');
+    Asset::make()->container('assets')->path('private/secret.pdf')->save();
+
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachments',
+                            'field' => [
+                                'type' => 'assets',
+                                'container' => 'assets',
+                                'folder' => 'foo',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'attachments' => ['elsewhere/existing.png'],
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'attachments' => [
+                UploadedFile::fake()->create('foobar.png'),
+                'elsewhere/existing.png',
+                'foo/blah-blah-blah.png',
+                'private/secret.pdf',
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertCount(3, $entry->get('attachments'));
+    $this->assertStringContainsString('foo/', $entry->get('attachments')[0]);
+    $this->assertSame('elsewhere/existing.png', $entry->get('attachments')[1]);
+    $this->assertSame('foo/blah-blah-blah.png', $entry->get('attachments')[2]);
+});
+
+it('cant update entry with existing files inside a grid field', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Storage::disk('local')->put('private/secret.pdf', '');
+    Asset::make()->container('assets')->path('private/secret.pdf')->save();
+
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'tracks',
+                            'field' => [
+                                'type' => 'grid',
+                                'fields' => [
+                                    [
+                                        'handle' => 'track_artwork',
+                                        'field' => [
+                                            'type' => 'assets',
+                                            'container' => 'assets',
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data(['title' => 'Allo Mate!'])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'tracks' => [
+                ['track_artwork' => [UploadedFile::fake()->create('foobar.png'), 'private/secret.pdf']],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertStringContainsString('-foobar.png', $entry->get('tracks')[0]['track_artwork']);
 });
 
 it('can update entry with revisions enabled', function () {
