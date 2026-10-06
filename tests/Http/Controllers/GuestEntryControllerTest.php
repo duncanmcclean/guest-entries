@@ -27,6 +27,7 @@ use function PHPUnit\Framework\assertCount;
 beforeEach(function () {
     File::deleteDirectory(app('stache')->store('entries')->directory());
     File::deleteDirectory(app('stache')->store('collection-trees')->directory());
+    File::deleteDirectory(resource_path('blueprints'));
 
     $this->app['config']->set('guest-entries.collections', [
         'comments' => true,
@@ -362,6 +363,92 @@ it('can store entry and ensure ignored parameters are not saved', function () {
     $this->assertNull($entry->get('_collection'));
     $this->assertNull($entry->get('_redirect'));
     $this->assertNull($entry->get('_error_redirect'));
+});
+
+it('can store entry and ensure reserved parameters are not saved', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'id' => 'hijacked-id',
+            'origin' => 'some-other-entry',
+            'blueprint' => 'some-other-blueprint',
+            'template' => 'some-template',
+            'layout' => 'some-layout',
+            'redirect' => 'https://evil.example',
+            'protect' => 'password',
+            'author' => 'some-user',
+            'order' => 1,
+            'updated_by' => 'some-user',
+            'updated_at' => 1234567890,
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertNotSame('hijacked-id', $entry->id());
+    $this->assertNull(Entry::find('hijacked-id'));
+    $this->assertSame($entry->get('title'), 'This is great');
+
+    $this->assertNull($entry->get('origin'));
+    $this->assertNull($entry->get('blueprint'));
+    $this->assertNull($entry->get('template'));
+    $this->assertNull($entry->get('layout'));
+    $this->assertNull($entry->get('redirect'));
+    $this->assertNull($entry->redirectUrl());
+    $this->assertNull($entry->get('protect'));
+    $this->assertNull($entry->get('author'));
+    $this->assertNull($entry->get('order'));
+    $this->assertNull($entry->get('updated_by'));
+    $this->assertNotSame(1234567890, $entry->get('updated_at'));
+});
+
+it('can store entry and ensure reserved parameters are saved when they are blueprint fields', function () {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'template',
+                            'field' => [
+                                'type' => 'template',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'template' => 'comments/show',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->get('template'), 'comments/show');
 });
 
 it('can store entry and ensure updated at is set', function () {
@@ -2485,6 +2572,107 @@ it('can update entry and ensure required parameters are notsaved', function () {
     $this->assertNull($entry->get('_id'));
     $this->assertNull($entry->get('_redirect'));
     $this->assertNull($entry->get('_error_redirect'));
+});
+
+it('can update entry and ensure reserved parameters are not saved', function () {
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data([
+            'title' => 'Allo Mate!',
+            'author' => 'original-author',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'record_label' => 'Unknown',
+            'id' => 'hijacked-id',
+            'origin' => 'some-other-entry',
+            'blueprint' => 'some-other-blueprint',
+            'template' => 'some-template',
+            'layout' => 'some-layout',
+            'redirect' => 'https://evil.example',
+            'protect' => 'password',
+            'author' => 'some-user',
+            'order' => 1,
+            'updated_by' => 'some-user',
+            'updated_at' => 1234567890,
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertNull(Entry::find('hijacked-id'));
+    $this->assertSame($entry->get('record_label'), 'Unknown');
+    $this->assertSame($entry->get('author'), 'original-author');
+
+    $this->assertNull($entry->get('origin'));
+    $this->assertNull($entry->get('blueprint'));
+    $this->assertNull($entry->get('template'));
+    $this->assertNull($entry->get('layout'));
+    $this->assertNull($entry->get('redirect'));
+    $this->assertNull($entry->redirectUrl());
+    $this->assertNull($entry->get('protect'));
+    $this->assertNull($entry->get('order'));
+    $this->assertNull($entry->get('updated_by'));
+    $this->assertNotSame(1234567890, $entry->get('updated_at'));
+});
+
+it('can update entry and ensure reserved parameters are saved when they are blueprint fields', function () {
+    Blueprint::make('albums')
+        ->setNamespace('collections.albums')
+        ->setContents([
+            'title' => 'Albums',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'template',
+                            'field' => [
+                                'type' => 'template',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('albums')->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->data(['title' => 'Allo Mate!'])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'template' => 'albums/show',
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->get('template'), 'albums/show');
 });
 
 it('can update entry and ensure updated at is set', function () {

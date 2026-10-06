@@ -43,6 +43,8 @@ class GuestEntryController extends Controller
 {
     protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
 
+    protected $reservedParameters = ['id', 'origin', 'blueprint', 'template', 'layout', 'redirect', 'protect', 'author', 'order', 'updated_by', 'updated_at'];
+
     public function store(StoreRequest $request)
     {
         if (! $this->honeypotPassed($request)) {
@@ -75,6 +77,10 @@ class GuestEntryController extends Controller
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
             /** @var Field $blueprintField */
             $field = $collection->entryBlueprint()->field($key);
+
+            if (! $field && in_array($key, $this->reservedParameters)) {
+                continue;
+            }
 
             $entry->set(
                 $key,
@@ -147,6 +153,10 @@ class GuestEntryController extends Controller
         foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
             /** @var Field $blueprintField */
             $field = $entry->blueprint()->field($key);
+
+            if (! $field && in_array($key, $this->reservedParameters)) {
+                continue;
+            }
 
             $data[$key] = $field
                 ? $this->processField($entry, $field, $key, $value, $request)
