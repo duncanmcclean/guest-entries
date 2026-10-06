@@ -1,5 +1,18 @@
 # Changelog
 
+## v5.2.1 (2026-10-06)
+
+### What's fixed
+- Harden file uploads #121 by @duncanmcclean
+- Harden entry lookups in update & destroy requests #120 by @duncanmcclean
+- Harden handling of existing asset paths #122 by @duncanmcclean
+- Harden form parameters when validation is disabled #123 by @duncanmcclean
+- Harden handling of invalid input #124 by @duncanmcclean
+- Prevent guests from setting reserved entry fields #125 by @duncanmcclean
+- Improve SVG sanitization #126 by @duncanmcclean
+
+
+
 ## v5.2.0 (2026-04-24)
 
 ### What's new
