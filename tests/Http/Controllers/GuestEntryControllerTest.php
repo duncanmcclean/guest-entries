@@ -32,6 +32,11 @@ beforeEach(function () {
     ]);
 });
 
+dataset('form parameter validation', [
+    'validation enabled' => [true],
+    'validation disabled' => [false],
+]);
+
 it('can store entry', function () {
     Collection::make('comments')->save();
 
@@ -1622,6 +1627,47 @@ it('cant update entry if collection has not been whitelisted', function () {
     $this->assertSame($entry->slug(), 'smth');
 });
 
+it('cant update entry if it does not belong to the collection', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('pages')->save();
+
+    Entry::make()
+        ->id('home')
+        ->collection('pages')
+        ->slug('home')
+        ->data([
+            'title' => 'Home',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('home'),
+            'title' => 'Hacked',
+        ])
+        ->assertForbidden();
+
+    $this->assertSame('Home', Entry::find('home')->get('title'));
+})->with('form parameter validation');
+
+it('cant update entry that does not exist', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('non-existent'),
+            'title' => 'Something',
+        ])
+        ->assertNotFound();
+})->with('form parameter validation');
+
 it('can update entry and user is redirected', function () {
     Collection::make('albums')->save();
 
@@ -3158,6 +3204,45 @@ it('cant destroy entry if collection has not been whitelisted', function () {
 
     $this->assertNotNull($entry);
 });
+
+it('cant destroy entry if it does not belong to the collection', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('pages')->save();
+
+    Entry::make()
+        ->id('home')
+        ->collection('pages')
+        ->slug('home')
+        ->data([
+            'title' => 'Home',
+        ])
+        ->save();
+
+    $this
+        ->delete(route('statamic.guest-entries.destroy'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('home'),
+        ])
+        ->assertForbidden();
+
+    $this->assertNotNull(Entry::find('home'));
+})->with('form parameter validation');
+
+it('cant destroy entry that does not exist', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('comments')->save();
+
+    $this
+        ->delete(route('statamic.guest-entries.destroy'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('non-existent'),
+        ])
+        ->assertNotFound();
+})->with('form parameter validation');
 
 it('can destroy entry if collection has not been whitelisted and user is redirected', function () {
     Collection::make('albums')->save();

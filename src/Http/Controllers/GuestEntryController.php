@@ -110,7 +110,7 @@ class GuestEntryController extends Controller
         }
 
         /** @var \Statamic\Entries\Entry $entry */
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         /** @var array $data */
         $data = $entry->data()->toArray();
@@ -180,7 +180,7 @@ class GuestEntryController extends Controller
             return $this->withSuccess($request);
         }
 
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         $entry->delete();
 
