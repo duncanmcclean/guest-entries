@@ -3,6 +3,7 @@
 namespace DuncanMcClean\GuestEntries\Http\Controllers;
 
 use Carbon\Carbon;
+use Carbon\Exceptions\InvalidFormatException;
 use DuncanMcClean\GuestEntries\Events\GuestEntryCreated;
 use DuncanMcClean\GuestEntries\Events\GuestEntryDeleted;
 use DuncanMcClean\GuestEntries\Events\GuestEntryUpdated;
@@ -36,6 +37,7 @@ use Statamic\Fieldtypes\Replicator;
 use Statamic\Revisions\Revision;
 use Statamic\Rules\AllowedFile;
 use Statamic\Sites\Site;
+use TypeError;
 
 class GuestEntryController extends Controller
 {
@@ -63,7 +65,7 @@ class GuestEntryController extends Controller
 
         if ($collection->dated()) {
             $this->ignoredParameters[] = 'date';
-            $entry->date($request->get('date') ?? now());
+            $this->setEntryDate($entry, $request->get('date') ?? now());
         }
 
         if ($request->has('published')) {
@@ -105,6 +107,17 @@ class GuestEntryController extends Controller
         event(new GuestEntryCreated($entry));
 
         return $this->withSuccess($request);
+    }
+
+    private function setEntryDate($entry, mixed $date): void
+    {
+        try {
+            $entry->date($date);
+        } catch (InvalidFormatException|TypeError) {
+            throw ValidationException::withMessages([
+                'date' => __('validation.date', ['attribute' => 'date']),
+            ]);
+        }
     }
 
     public function update(UpdateRequest $request)
@@ -152,7 +165,7 @@ class GuestEntryController extends Controller
             ]);
 
             if ($entry->collection()->dated() && $request->has('date')) {
-                $revision->date($request->get('date'));
+                $revision->date($this->parseDate('date', $request->get('date')));
             }
 
             if ($request->user()) {
@@ -164,12 +177,11 @@ class GuestEntryController extends Controller
             $revision->save();
             $entry->save();
         } else {
-            $entry->data($data);
-
             if ($entry->collection()->dated() && $request->has('date')) {
-                $entry->date($request->get('date'));
+                $this->setEntryDate($entry, $request->get('date'));
             }
 
+            $entry->data($data);
             $entry->touch();
         }
 
@@ -197,39 +209,28 @@ class GuestEntryController extends Controller
     {
         if ($field && $field->fieldtype() instanceof Replicator) {
             $replicatorField = $field;
+            $sets = $replicatorField->fieldtype()->flattenedSetsConfig();
 
             return collect($value)
-                ->map(function ($item, $index) use ($entry, $replicatorField, $request) {
-                    $set = $item['type'] ?? array_values($replicatorField->fieldtype()->config('sets'))[0];
+                ->map(function ($item, $index) use ($entry, $replicatorField, $sets, $request) {
+                    $set = $item['type'] ?? $sets->keys()->first();
+
+                    if (! is_string($set) || ! $sets->has($set)) {
+                        $key = "{$replicatorField->handle()}.{$index}.type";
+
+                        throw ValidationException::withMessages([
+                            $key => __('validation.in', ['attribute' => $key]),
+                        ]);
+                    }
+
+                    $setFields = $replicatorField->fieldtype()->fields($set, $index);
 
                     return collect($item)
                         ->reject(function ($value, $fieldHandle) {
                             return $fieldHandle === 'type';
                         })
-                        ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $set, $request) {
-                            // Handle sets stored in the legacy format...
-                            if (isset($set['fields'])) {
-                                $field = collect($set['fields'])
-                                    ->where('handle', $fieldHandle)
-                                    ->map(function ($field) {
-                                        return new Field($field['handle'], $field['field']);
-                                    })
-                                    ->first();
-                            } else {
-                                $field = collect($set['sets'])
-                                    ->flatMap(function ($tab) {
-                                        return $tab['fields'];
-                                    })
-                                    ->where('handle', $fieldHandle)
-                                    ->map(function ($field) {
-                                        return new Field($field['handle'], $field['field']);
-                                    })
-                                    ->first();
-                            }
-
-                            if (! $field) {
-                                return $value;
-                            }
+                        ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $setFields, $request) {
+                            $field = $setFields->get($fieldHandle);
 
                             $key = "{$replicatorField->handle()}.{$index}.{$fieldHandle}";
 
@@ -237,9 +238,7 @@ class GuestEntryController extends Controller
                                 ? $this->processField($entry, $field, $key, $value, $request)
                                 : $value;
                         })
-                        ->merge([
-                            'type' => $item['type'] ?? array_keys($replicatorField->fieldtype()->config('sets'))[0],
-                        ])
+                        ->merge(['type' => $set])
                         ->toArray();
                 })
                 ->toArray();
@@ -271,27 +270,43 @@ class GuestEntryController extends Controller
 
         if ($value && $field && $field->fieldtype() instanceof DateFieldtype) {
             if (is_array($value) && isset($value['start']) && isset($value['end'])) {
+                $start = $this->parseDate("{$key}.start", $value['start']);
+                $end = $this->parseDate("{$key}.end", $value['end']);
+
                 $format = $field->fieldtype()->config(
                     'format',
                     strlen($value['start']) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
                 );
 
                 $value = [
-                    'start' => Carbon::parse($value['start'])->format($format),
-                    'end' => Carbon::parse($value['end'])->format($format),
+                    'start' => $start->format($format),
+                    'end' => $end->format($format),
                 ];
             } else {
                 // Handle single mode (value is a string)
+                $date = $this->parseDate($key, $value);
+
                 $format = $field->fieldtype()->config(
                     'format',
                     strlen($value) > 10 ? $field->fieldtype()::DEFAULT_DATETIME_FORMAT : $field->fieldtype()::DEFAULT_DATE_FORMAT
                 );
 
-                $value = Carbon::parse($value)->format($format);
+                $value = $date->format($format);
             }
         }
 
         return $value;
+    }
+
+    private function parseDate(string $key, mixed $value): Carbon
+    {
+        try {
+            return Carbon::parse($value);
+        } catch (InvalidFormatException|TypeError) {
+            throw ValidationException::withMessages([
+                $key => __('validation.date', ['attribute' => $key]),
+            ]);
+        }
     }
 
     protected function generateEntrySlug($entry): string
@@ -456,7 +471,9 @@ class GuestEntryController extends Controller
 
     protected function guessSiteFromRequest($request): Site
     {
-        if ($site = $request->get('site')) {
+        $site = $request->get('site');
+
+        if (is_string($site) && SiteFacade::get($site)) {
             return SiteFacade::get($site);
         }
 
