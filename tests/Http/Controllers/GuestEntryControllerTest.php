@@ -495,6 +495,25 @@ it('can store entry and date is saved as part of file name if dated collection',
     $this->assertStringContainsString('2021-06-06.this-is-great.md', $entry->path());
 });
 
+it('cant store entry with an invalid date if dated collection', function ($date) {
+    Collection::make('comments')->dated(true)->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'date' => $date,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('date');
+
+    $this->assertNull(Entry::all()->last());
+})->with([
+    'unparseable string' => ['not-a-date'],
+    'array' => [['2021-06-06']],
+]);
+
 it('can store entry and ensure file can be uploaded', function () {
     AssetContainer::make('assets')->disk('local')->save();
 
@@ -1107,6 +1126,98 @@ it('can store entry with date range field', function () {
     $this->assertSame($entry->get('event_dates')['end'], '2024-06-03');
 });
 
+it('cant store entry with an invalid value for a date field', function ($date) {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'published_on',
+                            'field' => [
+                                'mode' => 'single',
+                                'type' => 'date',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'published_on' => $date,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('published_on');
+
+    $this->assertNull(Entry::all()->last());
+})->with([
+    'unparseable string' => ['not-a-date'],
+    'array' => [['2021-06-06']],
+]);
+
+it('cant store entry with an invalid value for a date range field', function () {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'event_dates',
+                            'field' => [
+                                'mode' => 'range',
+                                'type' => 'date',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'Conference Event',
+            'slug' => 'conference-event',
+            'event_dates' => [
+                'start' => '2024-06-01',
+                'end' => 'not-a-date',
+            ],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('event_dates.end');
+
+    $this->assertNull(Entry::all()->last());
+});
+
 it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
 
@@ -1215,6 +1326,43 @@ it('can store entry and ensure created in correct site by current site fallback'
     $this->assertSame($entry->slug(), 'this-is-great');
     $this->assertSame($entry->locale(), 'two');
 });
+
+it('can store entry and ensure created in correct site when site in request payload does not exist', function ($site) {
+    Config::set('statamic.editions.pro', true);
+
+    Site::setSites([
+        'one' => [
+            'name' => config('app.name'),
+            'locale' => 'en_US',
+            'url' => '/one',
+        ],
+        'two' => [
+            'name' => config('app.name'),
+            'locale' => 'en_US',
+            'url' => '/two',
+        ],
+    ]);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->from('/two/something')
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'site' => $site,
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame($entry->locale(), 'two');
+})->with([
+    'unknown handle' => ['three'],
+    'array' => [['one']],
+]);
 
 it('can store entry and ensure entry is only saved once', function () {
     Event::fake();
@@ -1410,6 +1558,153 @@ it('can store entry with replicator field and an assets field inside the replica
     $this->assertIsString($entry->get('things')[0]['text']);
     $this->assertIsString($entry->get('things')[1]['document']);
 });
+
+it('can store entry with replicator field and set types', function ($sets) {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'things',
+                            'field' => [
+                                'type' => 'replicator',
+                                'sets' => $sets,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'things' => [
+                [
+                    'type' => 'link',
+                    'url' => 'https://example.com',
+                ],
+                [
+                    'type' => 'event',
+                    'happened_on' => '2009-06-06',
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $entry = Entry::all()->last();
+
+    $this->assertNotNull($entry);
+    $this->assertSame([
+        ['url' => 'https://example.com', 'type' => 'link'],
+        ['happened_on' => '2009', 'type' => 'event'],
+    ], $entry->get('things'));
+})->with([
+    'legacy sets' => [[
+        'link' => [
+            'fields' => [
+                ['handle' => 'url', 'field' => ['type' => 'text']],
+            ],
+        ],
+        'event' => [
+            'fields' => [
+                ['handle' => 'happened_on', 'field' => ['type' => 'date', 'format' => 'Y']],
+            ],
+        ],
+    ]],
+    'grouped sets' => [[
+        'main' => [
+            'sets' => [
+                'link' => [
+                    'fields' => [
+                        ['handle' => 'url', 'field' => ['type' => 'text']],
+                    ],
+                ],
+            ],
+        ],
+        'other' => [
+            'sets' => [
+                'event' => [
+                    'fields' => [
+                        ['handle' => 'happened_on', 'field' => ['type' => 'date', 'format' => 'Y']],
+                    ],
+                ],
+            ],
+        ],
+    ]],
+]);
+
+it('cant store entry with replicator field and an invalid set type', function ($type) {
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'things',
+                            'field' => [
+                                'type' => 'replicator',
+                                'sets' => [
+                                    'link' => [
+                                        'fields' => [
+                                            ['handle' => 'url', 'field' => ['type' => 'text']],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'this-is-great',
+            'things' => [
+                [
+                    'type' => $type,
+                    'url' => 'https://example.com',
+                ],
+            ],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('things.0.type');
+
+    $this->assertNull(Entry::all()->last());
+})->with([
+    'unknown handle' => ['nonexistent'],
+    'array' => [['link']],
+]);
 
 it('can store entry with grid field', function () {
     AssetContainer::make('assets')->disk('local')->save();
@@ -1822,6 +2117,44 @@ it('can update entry and date is saved as part of file name if dated collection'
 
     $this->assertStringContainsString('2021-09-09.allo-mate.md', $entry->path());
 });
+
+it('cant update entry with an invalid date if dated collection', function ($revisionsEnabled) {
+    Config::set('statamic.editions.pro', true);
+    Config::set('statamic.revisions.enabled', $revisionsEnabled);
+
+    Collection::make('albums')->dated(true)->revisionsEnabled($revisionsEnabled)->save();
+
+    Entry::make()
+        ->id('allo-mate-idee')
+        ->collection('albums')
+        ->slug('allo-mate')
+        ->date('2021-06-06')
+        ->data([
+            'title' => 'Allo Mate!',
+            'artist' => 'Guvna B',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => encrypt('albums'),
+            '_id' => encrypt('allo-mate-idee'),
+            'record_label' => 'Unknown',
+            'date' => 'not-a-date',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasErrors('date');
+
+    $entry = Entry::find('allo-mate-idee');
+
+    $this->assertSame($revisionsEnabled, $entry->revisionsEnabled());
+    $this->assertFalse($entry->hasWorkingCopy());
+    $this->assertNull($entry->get('record_label'));
+    $this->assertStringContainsString('2021-06-06.allo-mate.md', $entry->path());
+})->with([
+    'without revisions' => [false],
+    'with revisions' => [true],
+]);
 
 it('can update entry and ensure date is in same format as defined in blueprint', function () {
     Blueprint::make('albums')
