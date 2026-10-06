@@ -13,6 +13,7 @@ use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -26,6 +27,7 @@ use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
 use Statamic\Facades\Stache;
+use Statamic\Facades\User;
 use Statamic\Fields\Field;
 use Statamic\Fieldtypes\Assets\Assets as AssetFieldtype;
 use Statamic\Fieldtypes\Date as DateFieldtype;
@@ -112,7 +114,7 @@ class GuestEntryController extends Controller
         }
 
         /** @var \Statamic\Entries\Entry $entry */
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         /** @var array $data */
         $data = $entry->data()->toArray();
@@ -182,7 +184,7 @@ class GuestEntryController extends Controller
             return $this->withSuccess($request);
         }
 
-        $entry = Entry::find($request->get('_id'));
+        $entry = $request->entry();
 
         $entry->delete();
 
@@ -365,8 +367,8 @@ class GuestEntryController extends Controller
             $folder = match (true) {
                 ! is_null($field->get('folder')) => $field->get('folder'),
                 $field->get('dynamic') === 'id' => $entry->id(),
-                $field->get('dynamic') === 'slug' => $entry->slug() ?? $request->get('slug') ?? Str::slug($request->get('title'), '-'),
-                $field->get('dynamic') === 'author' => $entry->author ?? $request->get('author'),
+                $field->get('dynamic') === 'slug' => Str::slug($entry->slug() ?? $request->get('slug') ?? $request->get('title'), '-', $entry->site()->lang()),
+                $field->get('dynamic') === 'author' => $this->authorFolder($entry, $request),
                 default => '',
             };
 
@@ -406,6 +408,17 @@ class GuestEntryController extends Controller
         }
 
         return $files;
+    }
+
+    private function authorFolder(EntryContract $entry, Request $request): ?string
+    {
+        $author = SupportCollection::wrap($entry->author ?? $request->get('author'))->first();
+
+        if (is_object($author)) {
+            return $author->id();
+        }
+
+        return User::find($author)?->id();
     }
 
     private function existingFiles(EntryContract $entry, string $key, Field $field, AssetContainerContract $assetContainer, Request $request): array

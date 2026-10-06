@@ -18,6 +18,7 @@ use Statamic\Facades\Blueprint;
 use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site;
+use Statamic\Facades\User;
 use Statamic\Structures\CollectionStructure;
 
 use function PHPUnit\Framework\assertCount;
@@ -31,6 +32,11 @@ beforeEach(function () {
         'albums' => true,
     ]);
 });
+
+dataset('form parameter validation', [
+    'validation enabled' => [true],
+    'validation disabled' => [false],
+]);
 
 it('can store entry', function () {
     Collection::make('comments')->save();
@@ -687,6 +693,189 @@ it('can store entry and with file and ensure dynamic folder is used', function (
     $this->assertIsString($entry->get('attachment'));
     $this->assertStringContainsString('this-is-great/', $entry->get('attachment'));
     $this->assertStringContainsString('-foobar.png', $entry->get('attachment'));
+});
+
+it('can store entry with file and ensure dynamic slug folder cant be used to write into other folders', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'slug',
+                            'field' => [
+                                'type' => 'slug',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                                'dynamic' => 'slug',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'slug' => 'some/other/../dir',
+            'attachment' => UploadedFile::fake()->create('foobar.png'),
+        ])
+        ->assertRedirect();
+
+    $this->assertNotNull($entry = Entry::all()->last());
+
+    $this->assertStringStartsWith('someotherdir/', $entry->get('attachment'));
+    $this->assertStringEndsWith('-foobar.png', $entry->get('attachment'));
+});
+
+it('can store entry with file and ensure dynamic author folder is the author id', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    $user = User::make()->email('guest@example.com')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                                'dynamic' => 'author',
+                            ],
+                        ],
+                        [
+                            'handle' => 'author',
+                            'field' => [
+                                'type' => 'users',
+                                'max_items' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'attachment' => UploadedFile::fake()->create('foobar.png'),
+            'author' => $user->id(),
+        ])
+        ->assertRedirect();
+
+    $this->assertNotNull($entry = Entry::all()->last());
+
+    $this->assertStringStartsWith($user->id().'/', $entry->get('attachment'));
+    $this->assertStringEndsWith('-foobar.png', $entry->get('attachment'));
+});
+
+it('can store entry with file and ensure dynamic author folder cant be used to write into other folders', function () {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    Blueprint::make('comments')
+        ->setNamespace('collections.comments')
+        ->setContents([
+            'title' => 'Comments',
+            'sections' => [
+                'main' => [
+                    'display' => 'main',
+                    'fields' => [
+                        [
+                            'handle' => 'title',
+                            'field' => [
+                                'type' => 'text',
+                            ],
+                        ],
+                        [
+                            'handle' => 'attachment',
+                            'field' => [
+                                'mode' => 'list',
+                                'container' => 'assets',
+                                'restrict' => false,
+                                'allow_uploads' => true,
+                                'show_filename' => true,
+                                'display' => 'Attachment',
+                                'type' => 'assets',
+                                'icon' => 'assets',
+                                'listable' => 'hidden',
+                                'max_items' => 1,
+                                'dynamic' => 'author',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ])
+        ->save();
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_collection' => encrypt('comments'),
+            'title' => 'This is great',
+            'attachment' => UploadedFile::fake()->create('foobar.png'),
+            'author' => 'some/other/../dir',
+        ])
+        ->assertRedirect();
+
+    $this->assertNotNull($entry = Entry::all()->last());
+
+    $this->assertStringNotContainsString('/', $entry->get('attachment'));
+    $this->assertStringEndsWith('-foobar.png', $entry->get('attachment'));
 });
 
 it('can store entry and ensure uploaded SVG file is sanitized', function () {
@@ -1791,6 +1980,47 @@ it('cant update entry if collection has not been whitelisted', function () {
     $this->assertSame($entry->get('title'), 'Smth'); // Has not changed
     $this->assertSame($entry->slug(), 'smth');
 });
+
+it('cant update entry if it does not belong to the collection', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('pages')->save();
+
+    Entry::make()
+        ->id('home')
+        ->collection('pages')
+        ->slug('home')
+        ->data([
+            'title' => 'Home',
+        ])
+        ->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('home'),
+            'title' => 'Hacked',
+        ])
+        ->assertForbidden();
+
+    $this->assertSame('Home', Entry::find('home')->get('title'));
+})->with('form parameter validation');
+
+it('cant update entry that does not exist', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('non-existent'),
+            'title' => 'Something',
+        ])
+        ->assertNotFound();
+})->with('form parameter validation');
 
 it('can update entry and user is redirected', function () {
     Collection::make('albums')->save();
@@ -3465,6 +3695,45 @@ it('cant destroy entry if collection has not been whitelisted', function () {
 
     $this->assertNotNull($entry);
 });
+
+it('cant destroy entry if it does not belong to the collection', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('pages')->save();
+
+    Entry::make()
+        ->id('home')
+        ->collection('pages')
+        ->slug('home')
+        ->data([
+            'title' => 'Home',
+        ])
+        ->save();
+
+    $this
+        ->delete(route('statamic.guest-entries.destroy'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('home'),
+        ])
+        ->assertForbidden();
+
+    $this->assertNotNull(Entry::find('home'));
+})->with('form parameter validation');
+
+it('cant destroy entry that does not exist', function (bool $validationEnabled) {
+    Config::set('guest-entries.disable_form_parameter_validation', ! $validationEnabled);
+    $parameter = fn (string $value) => $validationEnabled ? encrypt($value) : $value;
+
+    Collection::make('comments')->save();
+
+    $this
+        ->delete(route('statamic.guest-entries.destroy'), [
+            '_collection' => $parameter('comments'),
+            '_id' => $parameter('non-existent'),
+        ])
+        ->assertNotFound();
+})->with('form parameter validation');
 
 it('can destroy entry if collection has not been whitelisted and user is redirected', function () {
     Collection::make('albums')->save();
