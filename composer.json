@@ -31,7 +31,8 @@
         "pestphp/pest": "^3.0 || ^4.1",
         "orchestra/testbench": "^10.8 || ^11.0",
         "spatie/test-time": "^1.2",
-        "laravel/pint": "^1.18"
+        "laravel/pint": "^1.18",
+        "thecodingmachine/safe": "^3.4"
     },
     "config": {
         "optimize-autoloader": true,
