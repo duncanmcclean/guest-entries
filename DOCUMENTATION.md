@@ -208,6 +208,14 @@ You may specify a URL to redirect the user to once the Guest Entry form has been
 
 You may specify a URL to redirect the user to once the Guest Entry form has been submitted unsuccessfully - commonly due to a validation error. Only URLs on your site are allowed.
 
+**Any other parameters**
+
+Any other parameters you pass to the tag will be added as HTML attributes on the `<form>` element.
+
+```antlers
+{{ guest-entries:create form="submit_article" class="space-y-4" }}
+```
+
 ### Fields
 
 Only the fields listed in the form's [`fields`](#forms) option will be saved. Everything else in the request is ignored.
