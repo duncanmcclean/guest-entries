@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.2.2 (2026-11-07)
+
+### What's fixed
+- Harden form parameters, slugs, sites & uploads #134 by @duncanmcclean
+
+> **Note:** Forms on statically cached pages will return a `422` error until the static cache is cleared. If you're submitting forms via AJAX, make sure you're sending the new `_params` input.
+
+
+
 ## v5.2.1 (2026-10-06)
 
 ### What's fixed
