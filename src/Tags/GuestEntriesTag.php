@@ -86,7 +86,7 @@ class GuestEntriesTag extends Tags
         $errors = [];
 
         foreach (session('errors')->getBag('default')->all() as $error) {
-            $errors[]['value'] = $error;
+            $errors[]['value'] = e($error);
         }
 
         return $errors;

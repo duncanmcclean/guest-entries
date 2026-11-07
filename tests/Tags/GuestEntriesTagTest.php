@@ -3,6 +3,8 @@
 use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
 use Statamic\Facades\Collection;
@@ -583,4 +585,14 @@ it('can fetch delete guest entry form data', function () {
     assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $form['params_html']);
     assertStringContainsString('<input type="hidden" name="_id" value="hello"', $form['params_html']);
     assertStringContainsString('Hello World', $form['title']);
+});
+
+it('escapes errors', function () use (&$tag) {
+    session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
+        'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',
+    ])));
+
+    expect($tag->errors())->toBe([
+        ['value' => 'The selected blocks.&lt;img src=x onerror=alert(1)&gt;.type is invalid.'],
+    ]);
 });

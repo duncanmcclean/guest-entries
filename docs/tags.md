@@ -69,7 +69,7 @@ There's a few 'special' input fields that you can take advantage of:
 
 **`slug`**
 
-Pretty self-explanatory. Allows you to provide a slug for the created entry. When not provided, a slugified version of the `title` is used.
+Pretty self-explanatory. Allows you to provide a slug for the created entry. When not provided, a slugified version of the `title` is used. If another entry is already using the slug, a number will be added to the end of it (eg. `my-article-1`).
 
 **`date`**
 

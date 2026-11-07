@@ -117,6 +117,69 @@ it('can store entry with duplicate slug', function () {
     $this->assertSame($entry->slug(), 'this-is-fantastic-1');
 });
 
+it('can store entry with a submitted slug that already exists', function () {
+    Collection::make('comments')->save();
+
+    Entry::make()->collection('comments')->id('about')->slug('about')->data(['title' => 'About'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => 'Hijacked',
+            'slug' => 'about',
+        ])
+        ->assertRedirect();
+
+    $this->assertSame('about-1', Entry::query()->where('title', 'Hijacked')->first()->slug());
+    $this->assertSame('about', Entry::find('about')->slug());
+});
+
+it('can store entry with a submitted slug that already exists in a structured collection', function () {
+    $collection = tap(Collection::make('comments')->structure((new CollectionStructure)->expectsRoot(true)))->save();
+
+    Entry::make()->collection('comments')->id('home')->slug('home')->data(['title' => 'Home'])->save();
+    Entry::make()->collection('comments')->id('about')->slug('about')->data(['title' => 'About'])->save();
+
+    $collection->structure()->in('default')->tree([['entry' => 'home'], ['entry' => 'about']])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => 'Hijacked',
+            'slug' => 'about',
+        ])
+        ->assertRedirect();
+
+    $this->assertSame('about-1', Entry::query()->where('title', 'Hijacked')->first()->slug());
+});
+
+it('can store entry with an array slug', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => 'This is great',
+            'slug' => ['a'],
+        ])
+        ->assertRedirect();
+
+    $this->assertSame('this-is-great', Entry::all()->last()->slug());
+});
+
+it('cant store entry with an array title', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => ['a'],
+        ])
+        ->assertSessionHasErrors('title');
+
+    $this->assertNull(Entry::all()->last());
+});
+
 it('can store entry with duplicate slug with different parent', function () {
     $collection = tap(Collection::make('comments')->structure((new CollectionStructure)->expectsRoot(true)))->save();
 
@@ -1586,6 +1649,44 @@ it('cant store entry with existing files outside of the fields folder', function
     $this->assertSame('foo/blah-blah-blah.png', $entry->get('attachments')[1]);
 });
 
+it('cant store entry with existing files in the fields dynamic folder', function (bool $loggedIn) {
+    AssetContainer::make('assets')->disk('local')->save();
+
+    User::make()->id('alice-id')->email('alice@example.com')->save();
+
+    Storage::disk('local')->put('alice-id/passport.pdf', 'secret');
+    Asset::make()->container('assets')->path('alice-id/passport.pdf')->save();
+
+    Blueprint::make('comments')->setNamespace('collections.comments')->setContents(['fields' => [
+        ['handle' => 'title', 'field' => ['type' => 'text']],
+        ['handle' => 'author', 'field' => ['type' => 'users', 'max_items' => 1]],
+        ['handle' => 'attachment', 'field' => ['type' => 'assets', 'container' => 'assets', 'dynamic' => 'author']],
+    ]])->save();
+
+    Collection::make('comments')->save();
+
+    if ($loggedIn) {
+        $this->actingAs(User::make()->id('mallory-id')->email('mallory@example.com')->save());
+    }
+
+    $this
+        ->post(route('statamic.guest-entries.store', ['attachment' => ['alice-id/passport.pdf']]), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => 'This is great',
+            'author' => 'alice-id',
+            'attachment' => [UploadedFile::fake()->create('mine.pdf')],
+        ])
+        ->assertRedirect();
+
+    $attachment = Entry::all()->last()->get('attachment');
+
+    $this->assertStringEndsWith('-mine.pdf', $attachment);
+    $this->assertStringNotContainsString('passport.pdf', $attachment);
+})->with([
+    'guest' => [false],
+    'another user' => [true],
+]);
+
 it('can store entry and ensure date is in same format defined in blueprint', function () {
     Blueprint::make('comments')
         ->setNamespace('collections.comments')
@@ -1818,6 +1919,7 @@ it('cant store entry with an invalid value for a date range field', function () 
 
 it('can store entry and ensure created in correct site by request payload', function () {
     Config::set('statamic.editions.pro', true);
+    Config::set('statamic.system.multisite', true);
 
     Site::setSites([
         'one' => [
@@ -1832,7 +1934,7 @@ it('can store entry and ensure created in correct site by request payload', func
         ],
     ]);
 
-    Collection::make('comments')->save();
+    Collection::make('comments')->sites(['one', 'two'])->save();
 
     $this
         ->post(route('statamic.guest-entries.store'), [
@@ -1854,6 +1956,7 @@ it('can store entry and ensure created in correct site by request payload', func
 
 it('can store entry and ensure created in correct site by referer', function () {
     Config::set('statamic.editions.pro', true);
+    Config::set('statamic.system.multisite', true);
 
     Site::setSites([
         'one' => [
@@ -1868,7 +1971,7 @@ it('can store entry and ensure created in correct site by referer', function () 
         ],
     ]);
 
-    Collection::make('comments')->save();
+    Collection::make('comments')->sites(['one', 'two'])->save();
 
     $this
         ->from('/two/something')
@@ -1890,6 +1993,7 @@ it('can store entry and ensure created in correct site by referer', function () 
 
 it('can store entry and ensure created in correct site by current site fallback', function () {
     Config::set('statamic.editions.pro', true);
+    Config::set('statamic.system.multisite', true);
 
     Site::setSites([
         'one' => [
@@ -1906,7 +2010,7 @@ it('can store entry and ensure created in correct site by current site fallback'
 
     Site::setCurrent('two');
 
-    Collection::make('comments')->save();
+    Collection::make('comments')->sites(['one', 'two'])->save();
 
     $this
         ->post(route('statamic.guest-entries.store'), [
@@ -1927,6 +2031,7 @@ it('can store entry and ensure created in correct site by current site fallback'
 
 it('can store entry and ensure created in correct site when site in request payload does not exist', function ($site) {
     Config::set('statamic.editions.pro', true);
+    Config::set('statamic.system.multisite', true);
 
     Site::setSites([
         'one' => [
@@ -1941,7 +2046,7 @@ it('can store entry and ensure created in correct site when site in request payl
         ],
     ]);
 
-    Collection::make('comments')->save();
+    Collection::make('comments')->sites(['one', 'two'])->save();
 
     $this
         ->from('/two/something')
@@ -1961,6 +2066,28 @@ it('can store entry and ensure created in correct site when site in request payl
     'unknown handle' => ['three'],
     'array' => [['one']],
 ]);
+
+it('can store entry and ensure it isnt created in a site the collection isnt in', function () {
+    Config::set('statamic.editions.pro', true);
+    Config::set('statamic.system.multisite', true);
+
+    Site::setSites([
+        'one' => ['name' => 'One', 'locale' => 'en_US', 'url' => '/one'],
+        'two' => ['name' => 'Two', 'locale' => 'en_US', 'url' => '/two'],
+    ]);
+
+    Collection::make('comments')->sites(['one'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store'), [
+            '_params' => encrypt(['action' => 'store', 'collection' => 'comments']),
+            'title' => 'This is great',
+            'site' => 'two',
+        ])
+        ->assertRedirect();
+
+    $this->assertSame('one', Entry::all()->last()->locale());
+});
 
 it('can store entry and ensure entry is only saved once', function () {
     Event::fake();
@@ -2431,6 +2558,27 @@ it('can update entry', function () {
     $this->assertSame($entry->get('record_label'), 'Unknown');
     $this->assertSame($entry->slug(), 'allo-mate');
 });
+
+it('can update entry with a submitted slug', function (string $slug, string $expected) {
+    Collection::make('albums')->save();
+
+    Entry::make()->id('allo-mate-idee')->collection('albums')->slug('allo-mate')->data(['title' => 'Allo Mate!'])->save();
+    Entry::make()->id('hooligan-idee')->collection('albums')->slug('hooligan')->data(['title' => 'Hooligan'])->save();
+
+    $this
+        ->post(route('statamic.guest-entries.update'), [
+            '_params' => encrypt(['action' => 'update', 'collection' => 'albums', 'id' => 'allo-mate-idee']),
+            'slug' => $slug,
+        ])
+        ->assertRedirect();
+
+    $this->assertSame($expected, Entry::find('allo-mate-idee')->slug());
+    $this->assertSame('hooligan', Entry::find('hooligan-idee')->slug());
+})->with([
+    'its own slug' => ['allo-mate', 'allo-mate'],
+    'a new slug' => ['allo-mate-deluxe', 'allo-mate-deluxe'],
+    'another entrys slug' => ['hooligan', 'hooligan-1'],
+]);
 
 it('can update entry if collection has title format', function () {
     Collection::make('albums')->titleFormats(['default' => '{{ artist }} - {{ name }}'])->save();
