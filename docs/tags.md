@@ -118,6 +118,60 @@ If you'd like to show a success message after a user has submitted the Guest Ent
 {{ /if }}
 ```
 
+## Security
+
+Anything submitted through a Guest Entries form was written by someone you don't necessarily trust, so treat it like any other user input:
+
+* **Escape it when you output it.** Antlers doesn't escape output by default, so use the [`sanitize`](https://statamic.dev/modifiers/sanitize) modifier on submitted values - including in `value` attributes.
+* **Markdown fields render HTML.** If guests can fill a Markdown field, enable its "Escape Markup" (`escape_markup`) option so `<script>` tags aren't rendered.
+* **Don't enable Antlers on fields guests can fill.** Otherwise, their values will be parsed as Antlers.
+* **Validate with a Form Request.** Blueprint validation rules aren't applied to Guest Entries forms. Use the [`request`](#parameters) parameter for required fields, allowed options, file types, etc.
+
+### Preventing guests from setting fields
+
+Guest Entries saves every input that's submitted, including ones that aren't in your blueprint, and special inputs like `published`. To stop guests setting fields they shouldn't, like `published`, `author` or `template`, use the `prohibited` rule in your Form Request:
+
+```php
+public function rules(): array
+{
+    return [
+        'title' => ['required', 'string'],
+        'published' => ['prohibited'],
+        'author' => ['prohibited'],
+        'template' => ['prohibited'],
+    ];
+}
+```
+
+### Who can update & delete entries
+
+Guest Entries doesn't check who an entry belongs to: anyone who can see an `update` or `delete` form can submit it. The `update` tag also outputs the entry's data.
+
+Since the form's parameters are encrypted, users can only submit forms for entries they've been shown. So, only render the `update` and `delete` tags for users who are allowed to use them:
+
+```antlers
+{{ if (author | raw) && (author | raw) === current_user:id }}
+    {{ guest-entries:update collection="articles" :id="id" }}
+        ...
+    {{ /guest-entries:update }}
+{{ /if }}
+```
+
+The `raw` modifier is important: when the `author` field defaults to the current user, `author:id` returns the current user for entries that don't have an author.
+
+Make sure these pages aren't [statically cached](https://statamic.dev/static-caching), otherwise one user's forms could be shown to everyone.
+
+A rendered form can be submitted for as long as your `APP_KEY` stays the same, so for update forms, you should also check permissions in your Form Request's `authorize` method:
+
+```php
+public function authorize(): bool
+{
+    $entry = Entry::find($this->input('_id'));
+
+    return $entry && $entry->authors()->contains(User::current()?->id());
+}
+```
+
 ## Using with Blade
 
 If you prefer Blade, you can use Statamic's [Blade Components](https://statamic.dev/blade#using-antlers-blade-components) feature, which allows you to use Antlers tags in Blade.
