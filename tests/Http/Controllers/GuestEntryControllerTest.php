@@ -165,6 +165,31 @@ it('can store entry with a submitted slug that already exists in a structured co
     $this->assertSame('about-1', Entry::query()->where('title', 'Hijacked')->first()->slug());
 });
 
+it('can store entry with an array slug', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store', 'create_comments'), [
+            'title' => 'This is great',
+            'slug' => ['a'],
+        ])
+        ->assertRedirect();
+
+    $this->assertSame('this-is-great', Entry::all()->last()->slug());
+});
+
+it('cant store entry with an array title', function () {
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store', 'create_comments'), [
+            'title' => ['a'],
+        ])
+        ->assertSessionHasErrors('title');
+
+    $this->assertNull(Entry::all()->last());
+});
+
 it('can store entry with duplicate slug with different parent', function () {
     $collection = tap(Collection::make('comments')->structure((new CollectionStructure)->expectsRoot(true)))->save();
 
@@ -2630,6 +2655,26 @@ it('can update entry', function () {
     $this->assertSame($entry->get('record_label'), 'Unknown');
     $this->assertSame($entry->slug(), 'allo-mate');
 });
+
+it('can update entry with a submitted slug', function (string $slug, string $expected) {
+    Collection::make('albums')->save();
+
+    Entry::make()->id('allo-mate-idee')->collection('albums')->slug('allo-mate')->data(['title' => 'Allo Mate!'])->save();
+    Entry::make()->id('hooligan-idee')->collection('albums')->slug('hooligan')->data(['title' => 'Hooligan'])->save();
+
+    $this
+        ->patch(route('statamic.guest-entries.update', ['update_albums', 'allo-mate-idee']), [
+            'slug' => $slug,
+        ])
+        ->assertRedirect();
+
+    $this->assertSame($expected, Entry::find('allo-mate-idee')->slug());
+    $this->assertSame('hooligan', Entry::find('hooligan-idee')->slug());
+})->with([
+    'its own slug' => ['allo-mate', 'allo-mate'],
+    'a new slug' => ['allo-mate-deluxe', 'allo-mate-deluxe'],
+    'another entrys slug' => ['hooligan', 'hooligan-1'],
+]);
 
 it('can update entry if collection has title format', function () {
     Collection::make('albums')->titleFormats(['default' => '{{ artist }} - {{ name }}'])->save();

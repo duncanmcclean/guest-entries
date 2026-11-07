@@ -71,7 +71,7 @@ There's a few 'special' input fields that you can take advantage of:
 
 **`slug`**
 
-Pretty self-explanatory. Allows you to provide a slug for the created entry. When not provided, a slugified version of the `title` is used.
+Pretty self-explanatory. Allows you to provide a slug for the created entry. When not provided, a slugified version of the `title` is used. If another entry is already using the slug, a number will be added to the end of it (eg. `my-article-1`).
 
 The `slug` input is only used when it's listed in the form's `fields`. If another entry already uses the slug, a number will be added to the end (eg. `about-1`).
 
@@ -124,6 +124,7 @@ Anything submitted through a Guest Entries form was written by someone you don't
 * **Markdown fields render HTML.** If guests can fill a Markdown field, enable its "Escape Markup" (`escape_markup`) option so `<script>` tags aren't rendered.
 * **Validate with a Form Request.** Blueprint validation rules aren't applied to Guest Entries forms. Use the form's [`request`](/configuration#forms) option for required fields, allowed options, file types, the number of uploads, etc.
 * **Only allow the fields you need.** See the form's [`fields`](/configuration#forms) option.
+* **Don't statically cache update & delete forms.** The tags only render for users who can use them, so a cached page would show one user's form - and the entry's data - to everyone. Exclude these pages from [static caching](https://statamic.dev/static-caching).
 
 ## Using with Blade
 
