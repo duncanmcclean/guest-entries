@@ -65,5 +65,3 @@ When using the `{{ guest-entries }}` tags, Guest Entries will automatically encr
 This measure prevents users from tampering with the form parameters, or swapping them with the parameters from another form. However, if you wish to disable this functionality, set `disable_form_parameter_validation` to `true`.
 
 > **Warning:** When form parameter validation is disabled, users can submit any collection, entry ID and form request they like. This means anyone can update or delete *any* entry in your whitelisted collections, and skip your form request's validation & authorization.
-
-> **Note:** If your forms are on statically cached pages, you'll need to clear the static cache after updating Guest Entries, otherwise submissions will fail with a `422` error.
