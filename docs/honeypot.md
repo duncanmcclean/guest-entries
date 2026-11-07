@@ -7,7 +7,7 @@ Guest Entries includes a simple Honeypot feature to help reduce spam via your fr
 Once you've enabled the Honeypot, ensure to add the field to your forms, like so:
 
 ```antlers
-{{ guest-entries:create collection="articles" }}
+{{ guest-entries:create form="submit_article" }}
     <h2>Create article</h2>
 
     <input type="text" name="title">

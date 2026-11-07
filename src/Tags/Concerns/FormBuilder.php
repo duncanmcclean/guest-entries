@@ -8,16 +8,18 @@ trait FormBuilder
 {
     use RendersForms;
 
-    protected static $knownParams = ['collection', 'id', 'redirect', 'error_redirect', 'request'];
+    protected static $knownParams = ['form', 'id', 'redirect', 'error_redirect'];
 
-    protected function createForm(string $action, array $data = [], string $method = 'POST', array $knownParams = []): string|array
+    protected function createForm(string $action, array $data = [], string $method = 'POST'): string|array
     {
-        $url = route("statamic.guest-entries.{$action}");
-        $knownParams = array_merge(static::$knownParams, $knownParams);
+        $params = array_filter([
+            'redirect' => $this->params->get('redirect'),
+            'error_redirect' => $this->params->get('error_redirect'),
+        ]);
 
         if (! $this->canParseContents()) {
-            $attrs = $this->formAttrs($url, $method, $knownParams);
-            $params = $this->formParams($method, $this->hiddenParams($action));
+            $attrs = $this->formAttrs($action, $method, static::$knownParams);
+            $params = $this->formParams($method, $params);
 
             return array_merge([
                 'attrs' => $attrs,
@@ -27,32 +29,15 @@ trait FormBuilder
             ], $data);
         }
 
-        $html = $this->formOpen($url, $method, static::$knownParams);
+        $html = $this->formOpen($action, $method, static::$knownParams);
 
-        $html .= $this->formMetaFields($this->hiddenParams($action));
+        $html .= $this->formMetaFields($params);
 
         $html .= $this->parse($this->sessionData($data));
 
         $html .= $this->formClose();
 
         return $html;
-    }
-
-    private function hiddenParams(string $action): array
-    {
-        $params = [
-            'collection' => $this->params->get('collection'),
-            'id' => $this->params->get('id'),
-            'redirect' => $this->params->get('redirect'),
-            'error_redirect' => $this->params->get('error_redirect'),
-            'request' => $this->params->get('request'),
-        ];
-
-        if (config('guest-entries.disable_form_parameter_validation')) {
-            return array_map(fn ($value) => $value ?? 'Empty', $params);
-        }
-
-        return ['params' => encrypt(['action' => $action, ...$params])];
     }
 
     protected function sessionData($data = [])

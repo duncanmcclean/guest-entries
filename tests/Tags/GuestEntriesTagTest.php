@@ -1,8 +1,9 @@
 <?php
 
 use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
-use Illuminate\Container\EntryNotFoundException;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Statamic\Exceptions\CollectionNotFoundException;
@@ -12,12 +13,19 @@ use Statamic\Facades\Entry;
 use Statamic\Statamic;
 use Statamic\Tags\Tags;
 
+use function PHPUnit\Framework\assertNull;
 use function PHPUnit\Framework\assertStringContainsString;
 
 $tag = null;
 
 beforeEach(function () use (&$tag) {
-    Config::set('guest-entries.disable_form_parameter_validation', true);
+    Gate::define('manage-guestbook', fn (?Authenticatable $user) => true);
+
+    Config::set('guest-entries.forms', [
+        'create_guestbook' => ['action' => 'create', 'collection' => 'guestbook', 'fields' => ['name', 'email', 'comment']],
+        'update_guestbook' => ['action' => 'update', 'collection' => 'guestbook', 'fields' => ['name', 'email', 'comment'], 'authorize' => 'manage-guestbook'],
+        'delete_guestbook' => ['action' => 'delete', 'collection' => 'guestbook', 'authorize' => 'manage-guestbook'],
+    ]);
 
     /** @var Tags */
     $tag = resolve(GuestEntriesTag::class)
@@ -29,7 +37,7 @@ it('returns create guest entry form', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'create_guestbook',
     ]);
 
     $tag->setContent('
@@ -44,17 +52,16 @@ it('returns create guest entry form', function () use (&$tag) {
 
     $usage = $tag->create();
 
-    assertStringContainsString('http://localhost/!/guest-entries/create', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/create_guestbook"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
 
     assertStringContainsString('<h2>Create Guestbook Entry</h2>', $usage);
     assertStringContainsString('<textarea name="comment"></textarea>', $usage);
 });
 
-it('throws an exception when attempting to retrurn create guest entry form if no collection is provided', function () use (&$tag) {
+it('throws an exception when attempting to retrurn create guest entry form if no form is provided', function () use (&$tag) {
     $tag->setParameters([
-        'collection' => null,
+        'form' => null,
     ]);
 
     $tag->setContent('
@@ -68,11 +75,11 @@ it('throws an exception when attempting to retrurn create guest entry form if no
     ');
 
     $usage = $tag->create();
-})->throws(Exception::class);
+})->throws(Exception::class, 'The `form` parameter is required');
 
-it('throws an exception when attempting to return create guest entry form when collection does not exist', function () use (&$tag) {
+it('throws an exception when attempting to return create guest entry form when the form hasnt been configured', function () use (&$tag) {
     $tag->setParameters([
-        'collection' => 'lalalalallalalal',
+        'form' => 'not_configured',
     ]);
 
     $tag->setContent('
@@ -86,61 +93,61 @@ it('throws an exception when attempting to return create guest entry form when c
     ');
 
     $usage = $tag->create();
+})->throws(Exception::class, "The [not_configured] form hasn't been configured.");
+
+it('throws an exception when attempting to return create guest entry form with a form for a different action', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'form' => 'update_guestbook',
+    ]);
+
+    $tag->create();
+})->throws(Exception::class, "The [update_guestbook] form can't be used with the `create` tag.");
+
+it('throws an exception when attempting to return create guest entry form with v5 parameters', function (string $parameter) use (&$tag) {
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'form' => 'create_guestbook',
+        $parameter => 'something',
+    ]);
+
+    $tag->create();
+})->with(['collection', 'request'])->throws(Exception::class, 'have been moved to the form');
+
+it('throws an exception when attempting to return create guest entry form when the forms collection does not exist', function () use (&$tag) {
+    Config::set('guest-entries.forms.create_guestbook.collection', 'does_not_exist');
+
+    $tag->setParameters([
+        'form' => 'create_guestbook',
+    ]);
+
+    $tag->create();
 })->throws(CollectionNotFoundException::class);
 
 it('returns create guest entry form with redirect and error_redirect hidden inputs', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'create_guestbook',
         'redirect' => '/thank-you',
         'error_redirect' => '/error',
     ]);
 
     $usage = $tag->create();
 
-    assertStringContainsString('http://localhost/!/guest-entries/create', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/create_guestbook"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
     assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
-});
-
-it('returns create guest entry form with form parameters in a single encrypted input', function () use (&$tag) {
-    Config::set('guest-entries.disable_form_parameter_validation', false);
-
-    Collection::make('guestbook')->save();
-
-    $tag->setParameters([
-        'collection' => 'guestbook',
-        'redirect' => '/thank-you',
-        'request' => 'GuestbookRequest',
-    ]);
-
-    $usage = $tag->create();
-
-    preg_match('/<input type="hidden" name="_params" value="([^"]+)"/', $usage, $matches);
-
-    expect(decrypt(html_entity_decode($matches[1])))->toBe([
-        'action' => 'store',
-        'collection' => 'guestbook',
-        'id' => null,
-        'redirect' => '/thank-you',
-        'error_redirect' => null,
-        'request' => 'GuestbookRequest',
-    ]);
-
-    expect($usage)
-        ->not->toContain('name="_collection"')
-        ->not->toContain('name="_redirect"')
-        ->not->toContain('name="_request"');
 });
 
 it('returns create guest entry form with escaped hidden inputs', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'create_guestbook',
         'redirect' => '"><script>alert(1)</script>',
     ]);
 
@@ -160,7 +167,7 @@ it('returns update guest entry form', function () use (&$tag) {
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
         'id' => 'hello',
     ]);
 
@@ -176,16 +183,15 @@ it('returns update guest entry form', function () use (&$tag) {
 
     $usage = $tag->update();
 
-    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/update_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
+    assertStringContainsString('<input type="hidden" name="_method" value="PATCH"', $usage);
 
     assertStringContainsString('<h2>Update Guestbook Entry</h2>', $usage);
     assertStringContainsString('<textarea name="comment"></textarea>', $usage);
 });
 
-it('throws an exception when attempting to return update guest entry create form if no collection is provided', function () use (&$tag) {
+it('throws an exception when attempting to return update guest entry create form if no form is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     Entry::make()
@@ -210,7 +216,7 @@ it('throws an exception when attempting to return update guest entry create form
     ');
 
     $usage = $tag->update();
-})->throws(Exception::class);
+})->throws(Exception::class, 'The `form` parameter is required');
 
 it('throws an exception when attempting to return update guest entry form if no ID is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -223,7 +229,7 @@ it('throws an exception when attempting to return update guest entry form if no 
         ->save();
 
     $tag->setParameters([
-        'collection' => 'blah',
+        'form' => 'not_configured',
         'id' => 'hello',
     ]);
 
@@ -238,7 +244,7 @@ it('throws an exception when attempting to return update guest entry form if no 
     ');
 
     $usage = $tag->update();
-})->throws(CollectionNotFoundException::class);
+})->throws(Exception::class, "The [not_configured] form hasn't been configured.");
 
 it('throws an exception when attempting to return update guest entry form if no entry ID is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -251,7 +257,7 @@ it('throws an exception when attempting to return update guest entry form if no 
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
     ]);
 
     $tag->setContent('
@@ -265,9 +271,9 @@ it('throws an exception when attempting to return update guest entry form if no 
     ');
 
     $usage = $tag->update();
-})->throws(Exception::class);
+})->throws(Exception::class, 'The `id` parameter is required');
 
-it('throws an exception when attempting to return update guest entry form when entry ID does not exist', function () use (&$tag) {
+it('returns nothing when attempting to return update guest entry form when entry ID does not exist', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     Entry::make()
@@ -278,7 +284,7 @@ it('throws an exception when attempting to return update guest entry form when e
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
         'id' => 'blhabahahahah',
     ]);
 
@@ -292,8 +298,62 @@ it('throws an exception when attempting to return update guest entry form when e
         <button type="submit">Submit</button>
     ');
 
-    $usage = $tag->update();
-})->throws(EntryNotFoundException::class);
+    assertNull($tag->update());
+});
+
+it('returns nothing when attempting to return update guest entry form when entry belongs to a different collection', function () use (&$tag) {
+    Collection::make('guestbook')->save();
+    Collection::make('pages')->save();
+
+    Entry::make()
+        ->collection('pages')
+        ->id('home')
+        ->data(['title' => 'Home'])
+        ->save();
+
+    $tag->setParameters([
+        'form' => 'update_guestbook',
+        'id' => 'home',
+    ]);
+
+    assertNull($tag->update());
+});
+
+it('returns nothing when the user isnt allowed to update the entry', function () use (&$tag) {
+    Config::set('guest-entries.forms.update_guestbook.authorize', 'author');
+
+    Collection::make('guestbook')->save();
+
+    Entry::make()
+        ->collection('guestbook')
+        ->id('hello')
+        ->data(['title' => 'Hello World', 'comment' => 'Private draft', 'author' => 'someone-else'])
+        ->save();
+
+    $tag->setParameters([
+        'form' => 'update_guestbook',
+        'id' => 'hello',
+    ]);
+
+    $tag->setContent('<textarea name="comment">{{ comment }}</textarea>');
+
+    assertNull($tag->update());
+});
+
+it('throws an exception when attempting to return update guest entry form when the form has no fields', function () use (&$tag) {
+    Config::set('guest-entries.forms.update_guestbook.fields', null);
+
+    Collection::make('guestbook')->save();
+
+    Entry::make()->collection('guestbook')->id('hello')->data(['title' => 'Hello World'])->save();
+
+    $tag->setParameters([
+        'form' => 'update_guestbook',
+        'id' => 'hello',
+    ]);
+
+    $tag->update();
+})->throws(Exception::class, 'The [update_guestbook] form is missing `fields`.');
 
 it('returns update guest entry form and entry values can be used', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -306,7 +366,7 @@ it('returns update guest entry form and entry values can be used', function () u
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
         'id' => 'hello',
     ]);
 
@@ -322,10 +382,8 @@ it('returns update guest entry form and entry values can be used', function () u
 
     $usage = $tag->update();
 
-    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/update_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
     assertStringContainsString('<h2>Update Guestbook Entry: Hello World</h2>', $usage);
     assertStringContainsString('<textarea name="comment">Something can go here</textarea>', $usage);
@@ -342,7 +400,7 @@ it('returns update guest entry form with redirect and error_redirect hidden inpu
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
         'id' => 'hello',
         'redirect' => '/thank-you',
         'error_redirect' => '/error',
@@ -350,10 +408,8 @@ it('returns update guest entry form with redirect and error_redirect hidden inpu
 
     $usage = $tag->update();
 
-    assertStringContainsString('http://localhost/!/guest-entries/update', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/update_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
 });
@@ -369,14 +425,12 @@ it('can fetch update guest entry form data', function () {
         ->save();
 
     $form = Statamic::tag('guest-entries:update')->params([
-        'collection' => 'guestbook',
+        'form' => 'update_guestbook',
         'id' => 'hello',
     ])->fetch();
 
-    assertStringContainsString('http://localhost/!/guest-entries/update', $form['attrs_html']);
+    assertStringContainsString('action="http://localhost/!/guest-entries/update_guestbook/hello"', $form['attrs_html']);
     assertStringContainsString('<input type="hidden" name="_token"', $form['params_html']);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $form['params_html']);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $form['params_html']);
     assertStringContainsString('Hello World', $form['title']);
 });
 
@@ -391,7 +445,7 @@ it('returns delete guest entry form', function () use (&$tag) {
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
         'id' => 'hello',
     ]);
 
@@ -403,16 +457,14 @@ it('returns delete guest entry form', function () use (&$tag) {
 
     $usage = $tag->delete();
 
-    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/delete_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
     assertStringContainsString('<h2>Delete Guestbook Entry</h2>', $usage);
     assertStringContainsString('<button type="submit">DELETE</button>', $usage);
 });
 
-it('throws an exception when attempting to return delete guest entry form if no collection is provided', function () use (&$tag) {
+it('throws an exception when attempting to return delete guest entry form if no form is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     Entry::make()
@@ -433,9 +485,9 @@ it('throws an exception when attempting to return delete guest entry form if no 
     ');
 
     $usage = $tag->delete();
-})->throws(Exception::class);
+})->throws(Exception::class, 'The `form` parameter is required');
 
-it('throws an exception when attempting to return delete guest entry form when collection does not exist', function () use (&$tag) {
+it('throws an exception when attempting to return delete guest entry form when the form hasnt been configured', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     Entry::make()
@@ -446,7 +498,7 @@ it('throws an exception when attempting to return delete guest entry form when c
         ->save();
 
     $tag->setParameters([
-        'collection' => 'blah',
+        'form' => 'not_configured',
         'id' => 'hello',
     ]);
 
@@ -457,7 +509,7 @@ it('throws an exception when attempting to return delete guest entry form when c
     ');
 
     $usage = $tag->delete();
-})->throws(CollectionNotFoundException::class);
+})->throws(Exception::class, "The [not_configured] form hasn't been configured.");
 
 it('throws an exception when attempting to return delete guest entry form if no entry ID is provided', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -470,7 +522,7 @@ it('throws an exception when attempting to return delete guest entry form if no 
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
     ]);
 
     $tag->setContent('
@@ -480,9 +532,9 @@ it('throws an exception when attempting to return delete guest entry form if no 
     ');
 
     $usage = $tag->delete();
-})->throws(Exception::class);
+})->throws(Exception::class, 'The `id` parameter is required');
 
-it('throws an exception when attempting to return delete guest entry form when entry ID does not exist', function () use (&$tag) {
+it('returns nothing when attempting to return delete guest entry form when entry ID does not exist', function () use (&$tag) {
     Collection::make('guestbook')->save();
 
     Entry::make()
@@ -493,7 +545,7 @@ it('throws an exception when attempting to return delete guest entry form when e
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
         'id' => 'blhabahahahah',
     ]);
 
@@ -503,8 +555,25 @@ it('throws an exception when attempting to return delete guest entry form when e
         <button type="submit">DELETE</button>
     ');
 
-    $usage = $tag->delete();
-})->throws(EntryNotFoundException::class);
+    assertNull($tag->delete());
+});
+
+it('returns nothing when the user isnt allowed to delete the entry', function () use (&$tag) {
+    Config::set('guest-entries.forms.delete_guestbook.authorize', null);
+
+    Collection::make('guestbook')->save();
+
+    Entry::make()->collection('guestbook')->id('hello')->data(['title' => 'Hello World'])->save();
+
+    $tag->setParameters([
+        'form' => 'delete_guestbook',
+        'id' => 'hello',
+    ]);
+
+    $tag->setContent('<p>Delete {{ title }}?</p>');
+
+    assertNull($tag->delete());
+});
 
 it('returns delete guest entry form and entry values can be used', function () use (&$tag) {
     Collection::make('guestbook')->save();
@@ -517,7 +586,7 @@ it('returns delete guest entry form and entry values can be used', function () u
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
         'id' => 'hello',
     ]);
 
@@ -529,10 +598,8 @@ it('returns delete guest entry form and entry values can be used', function () u
 
     $usage = $tag->delete();
 
-    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/delete_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
 
     assertStringContainsString('<h2>Delete Guestbook Entry: Hello World</h2>', $usage);
     assertStringContainsString('<button type="submit">DELETE</button>', $usage);
@@ -549,7 +616,7 @@ it('returns delete guest entry form with redirect and error_redirect hidden inpu
         ->save();
 
     $tag->setParameters([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
         'id' => 'hello',
         'redirect' => '/thank-you',
         'error_redirect' => '/error',
@@ -557,12 +624,20 @@ it('returns delete guest entry form with redirect and error_redirect hidden inpu
 
     $usage = $tag->delete();
 
-    assertStringContainsString('http://localhost/!/guest-entries/delete', $usage);
+    assertStringContainsString('action="http://localhost/!/guest-entries/delete_guestbook/hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $usage);
     assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
+});
+
+it('escapes errors', function () use (&$tag) {
+    session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
+        'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',
+    ])));
+
+    expect($tag->errors())->toBe([
+        ['value' => 'The selected blocks.&lt;img src=x onerror=alert(1)&gt;.type is invalid.'],
+    ]);
 });
 
 it('can fetch delete guest entry form data', function () {
@@ -576,23 +651,11 @@ it('can fetch delete guest entry form data', function () {
         ->save();
 
     $form = Statamic::tag('guest-entries:delete')->params([
-        'collection' => 'guestbook',
+        'form' => 'delete_guestbook',
         'id' => 'hello',
     ])->fetch();
 
-    assertStringContainsString('http://localhost/!/guest-entries/delete', $form['attrs_html']);
+    assertStringContainsString('action="http://localhost/!/guest-entries/delete_guestbook/hello"', $form['attrs_html']);
     assertStringContainsString('<input type="hidden" name="_token"', $form['params_html']);
-    assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $form['params_html']);
-    assertStringContainsString('<input type="hidden" name="_id" value="hello"', $form['params_html']);
     assertStringContainsString('Hello World', $form['title']);
-});
-
-it('escapes errors', function () use (&$tag) {
-    session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
-        'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',
-    ])));
-
-    expect($tag->errors())->toBe([
-        ['value' => 'The selected blocks.&lt;img src=x onerror=alert(1)&gt;.type is invalid.'],
-    ]);
 });

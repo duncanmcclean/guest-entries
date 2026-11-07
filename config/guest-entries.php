@@ -4,16 +4,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Collections
+    | Forms
     |--------------------------------------------------------------------------
     |
-    | Configure which collections you'd like to be created/updated with
-    | the 'Guest Entries' addon.
+    | Configure the forms you'd like to use with the 'Guest Entries' addon.
+    | Each form is referenced in your templates by its handle, like so:
+    | {{ guest-entries:create form="submit_article" }}
     |
     */
 
-    'collections' => [
-        'pages' => true,
+    'forms' => [
+
+        // 'submit_article' => [
+        //     'action' => 'create',
+        //     'collection' => 'articles',
+        //     'fields' => ['title', 'content'],
+        // ],
+
+        // 'edit_article' => [
+        //     'action' => 'update',
+        //     'collection' => 'articles',
+        //     'fields' => ['title', 'content'],
+        //     'auth' => true,
+        //     'authorize' => 'author',
+        // ],
+
     ],
 
     /*
@@ -27,17 +42,5 @@ return [
     */
 
     'honeypot' => false,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Form Parameter Validation
-    |--------------------------------------------------------------------------
-    |
-    | Guest Entries will encrypt & validate form parameters to prevent them
-    | from being tampered with. You may disable this if you wish.
-    |
-    */
-
-    'disable_form_parameter_validation' => false,
 
 ];
