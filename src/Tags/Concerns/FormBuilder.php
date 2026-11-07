@@ -8,22 +8,18 @@ trait FormBuilder
 {
     use RendersForms;
 
-    protected static $knownParams = ['collection', 'id', 'redirect', 'error_redirect', 'request'];
+    protected static $knownParams = ['form', 'id', 'redirect', 'error_redirect'];
 
-    protected function createForm(string $action, array $data = [], string $method = 'POST', array $knownParams = []): string|array
+    protected function createForm(string $action, array $data = [], string $method = 'POST'): string|array
     {
-        $knownParams = array_merge(static::$knownParams, $knownParams);
+        $params = array_filter([
+            'redirect' => $this->params->get('redirect'),
+            'error_redirect' => $this->params->get('error_redirect'),
+        ]);
 
         if (! $this->canParseContents()) {
-            $attrs = $this->formAttrs($action, $method, $knownParams);
-
-            $params = $this->formParams($method, [
-                'collection' => $this->collectionValue(),
-                'id' => $this->idValue(),
-                'redirect' => $this->redirectValue(),
-                'error_redirect' => $this->errorRedirectValue(),
-                'request' => $this->requestValue(),
-            ]);
+            $attrs = $this->formAttrs($action, $method, static::$knownParams);
+            $params = $this->formParams($method, $params);
 
             return array_merge([
                 'attrs' => $attrs,
@@ -35,11 +31,7 @@ trait FormBuilder
 
         $html = $this->formOpen($action, $method, static::$knownParams);
 
-        $html .= $this->collectionField();
-        $html .= $this->idField();
-        $html .= $this->redirectField();
-        $html .= $this->errorRedirectField();
-        $html .= $this->requestField();
+        $html .= $this->formMetaFields($params);
 
         $html .= $this->parse($this->sessionData($data));
 
@@ -55,76 +47,6 @@ trait FormBuilder
         }
 
         return $data;
-    }
-
-    protected function collectionValue()
-    {
-        $collection = $this->params->get('collection') ?? 'Empty';
-
-        return config('guest-entries.disable_form_parameter_validation')
-            ? $collection
-            : encrypt($collection);
-    }
-
-    protected function idValue()
-    {
-        $id = $this->params->get('id') ?? 'Empty';
-
-        return config('guest-entries.disable_form_parameter_validation')
-            ? $id
-            : encrypt($id);
-    }
-
-    protected function redirectValue()
-    {
-        $redirect = $this->params->get('redirect') ?? 'Empty';
-
-        return config('guest-entries.disable_form_parameter_validation')
-            ? $redirect
-            : encrypt($redirect);
-    }
-
-    protected function errorRedirectValue()
-    {
-        $errorRedirect = $this->params->get('error_redirect') ?? 'Empty';
-
-        return config('guest-entries.disable_form_parameter_validation')
-            ? $errorRedirect
-            : encrypt($errorRedirect);
-    }
-
-    protected function requestValue()
-    {
-        $request = $this->params->get('request') ?? 'Empty';
-
-        return config('guest-entries.disable_form_parameter_validation')
-            ? $request
-            : encrypt($request);
-    }
-
-    protected function collectionField()
-    {
-        return '<input type="hidden" name="_collection" value="'.e($this->collectionValue()).'" />';
-    }
-
-    protected function idField()
-    {
-        return '<input type="hidden" name="_id" value="'.e($this->idValue()).'" />';
-    }
-
-    protected function redirectField()
-    {
-        return '<input type="hidden" name="_redirect" value="'.e($this->redirectValue()).'" />';
-    }
-
-    protected function errorRedirectField()
-    {
-        return '<input type="hidden" name="_error_redirect" value="'.e($this->errorRedirectValue()).'" />';
-    }
-
-    protected function requestField()
-    {
-        return '<input type="hidden" name="_request" value="'.e($this->requestValue()).'" />';
     }
 
     protected function params(): array

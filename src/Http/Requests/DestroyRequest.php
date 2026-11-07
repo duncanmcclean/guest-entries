@@ -6,24 +6,26 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class DestroyRequest extends FormRequest
 {
-    use Concerns\HandleFailedValidation,
+    use Concerns\AcceptsFormRequests,
+        Concerns\HandlesRedirects,
         Concerns\ResolvesEntry,
-        Concerns\WhitelistedCollections;
+        Concerns\ResolvesForm;
+
+    private string $action = 'delete';
 
     public function authorize()
     {
-        return $this->collectionIsWhitelisted($this->get('_collection'))
-            && $this->entryBelongsToCollection();
+        return $this->form()->authorize($this->entry())
+            && $this->formRequestAuthorizes();
     }
 
     public function rules()
     {
-        return [
-            '_collection' => ['required', 'string'],
-            '_id' => ['required', 'string'],
-            '_redirect' => ['nullable', 'string'],
-            '_error_redirect' => ['nullable', 'string'],
-            '_request' => ['nullable', 'string'],
-        ];
+        return $this->formRequest()?->rules() ?? [];
+    }
+
+    public function messages()
+    {
+        return $this->formRequest()?->messages() ?? [];
     }
 }

@@ -1,11 +1,10 @@
 <?php
 
 use DuncanMcClean\GuestEntries\Http\Controllers\GuestEntryController;
-use DuncanMcClean\GuestEntries\Http\Middleware\EnsureFormParametersArriveIntact;
 use Illuminate\Support\Facades\Route;
 
-Route::name('guest-entries.')->middleware([EnsureFormParametersArriveIntact::class, 'throttle:guest-entries'])->group(function () {
-    Route::post('/create', [GuestEntryController::class, 'store'])->name('store');
-    Route::post('/update', [GuestEntryController::class, 'update'])->name('update');
-    Route::delete('/delete', [GuestEntryController::class, 'destroy'])->name('destroy');
+Route::name('guest-entries.')->middleware('throttle:guest-entries')->group(function () {
+    Route::post('/{handle}', [GuestEntryController::class, 'store'])->name('store');
+    Route::patch('/{handle}/{id}', [GuestEntryController::class, 'update'])->name('update');
+    Route::delete('/{handle}/{id}', [GuestEntryController::class, 'destroy'])->name('destroy');
 });

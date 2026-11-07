@@ -11,11 +11,11 @@ use DuncanMcClean\GuestEntries\Exceptions\AssetContainerNotSpecified;
 use DuncanMcClean\GuestEntries\Http\Requests\DestroyRequest;
 use DuncanMcClean\GuestEntries\Http\Requests\StoreRequest;
 use DuncanMcClean\GuestEntries\Http\Requests\UpdateRequest;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -24,7 +24,6 @@ use Statamic\Contracts\Assets\AssetContainer as AssetContainerContract;
 use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Asset;
 use Statamic\Facades\AssetContainer;
-use Statamic\Facades\Collection;
 use Statamic\Facades\Entry;
 use Statamic\Facades\Site as SiteFacade;
 use Statamic\Facades\Stache;
@@ -42,23 +41,22 @@ use TypeError;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
-
-    protected $reservedParameters = ['id', 'origin', 'blueprint', 'template', 'layout', 'redirect', 'protect', 'author', 'order', 'updated_by', 'updated_at'];
-
     public function store(StoreRequest $request)
     {
         if (! $this->honeypotPassed($request)) {
             return $this->withSuccess($request);
         }
 
-        $collection = Collection::find($request->get('_collection'));
+        $form = $request->form();
+        $blueprint = $form->blueprint();
+        $collection = $form->collection();
 
         /** @var \Statamic\Entries\Entry $entry */
         $entry = Entry::make()
             ->collection($collection->handle())
+            ->blueprint($blueprint->handle())
             ->locale($site = $this->guessSiteFromRequest($request))
-            ->published(false);
+            ->published($form->published() ?? false);
 
         // By setting the ID here, it can be used as a dynamic folder name in the Assets fieldtype.
         // However, this will only work for the Stache driver.
@@ -66,22 +64,19 @@ class GuestEntryController extends Controller
             $entry->id(Stache::generateId());
         }
 
+        $values = $request->only($form->fillableFields($blueprint));
+        $slug = Arr::pull($values, 'slug');
+
         if ($collection->dated()) {
-            $this->ignoredParameters[] = 'date';
-            $this->setEntryDate($entry, $request->get('date') ?? now());
+            $this->setEntryDate($entry, Arr::pull($values, 'date') ?? now());
         }
 
-        if ($request->has('published')) {
-            $entry->published($request->get('published') == '1' || $request->get('published') == 'true' ? true : false);
+        if ($blueprint->hasField('author') && $user = User::current()) {
+            $entry->set('author', $user->id());
         }
 
-        foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
-            /** @var Field $blueprintField */
-            $field = $collection->entryBlueprint()->field($key);
-
-            if (! $field && in_array($key, $this->reservedParameters)) {
-                continue;
-            }
+        foreach ($values as $key => $value) {
+            $field = $blueprint->field($key);
 
             $entry->set(
                 $key,
@@ -91,9 +86,9 @@ class GuestEntryController extends Controller
             );
         }
 
-        if ($request->has('slug')) {
-            $entry->slug($request->get('slug'));
-        } elseif ($collection->entryBlueprint()->hasField('title')) {
+        if ($slug) {
+            $entry->slug($slug);
+        } elseif ($blueprint->hasField('title')) {
             $entry->slug($this->generateEntrySlug($entry));
         }
 
@@ -133,31 +128,28 @@ class GuestEntryController extends Controller
             return $this->withSuccess($request);
         }
 
+        $form = $request->form();
+
         /** @var \Statamic\Entries\Entry $entry */
         $entry = $request->entry();
 
         /** @var array $data */
         $data = $entry->data()->toArray();
 
-        if ($request->has('slug')) {
-            $entry->slug($request->get('slug'));
+        $values = $request->only($form->fillableFields($entry->blueprint()));
+        $slug = Arr::pull($values, 'slug');
+        $date = $entry->collection()->dated() ? Arr::pull($values, 'date') : null;
+
+        if ($slug) {
+            $entry->slug($slug);
         }
 
-        if ($entry->collection()->dated()) {
-            $this->ignoredParameters[] = 'date';
+        if (! is_null($form->published())) {
+            $entry->published($form->published());
         }
 
-        if ($request->has('published')) {
-            $entry->published($request->get('published') == 1 || $request->get('published') == 'true' ? true : false);
-        }
-
-        foreach (Arr::except($request->all(), $this->ignoredParameters) as $key => $value) {
-            /** @var Field $blueprintField */
+        foreach ($values as $key => $value) {
             $field = $entry->blueprint()->field($key);
-
-            if (! $field && in_array($key, $this->reservedParameters)) {
-                continue;
-            }
 
             $data[$key] = $field
                 ? $this->processField($entry, $field, $key, $value, $request)
@@ -175,8 +167,8 @@ class GuestEntryController extends Controller
                 'data' => $data,
             ]);
 
-            if ($entry->collection()->dated() && $request->has('date')) {
-                $revision->date($this->parseDate('date', $request->get('date')));
+            if ($date) {
+                $revision->date($this->parseDate('date', $date));
             }
 
             if ($request->user()) {
@@ -188,8 +180,8 @@ class GuestEntryController extends Controller
             $revision->save();
             $entry->save();
         } else {
-            if ($entry->collection()->dated() && $request->has('date')) {
-                $this->setEntryDate($entry, $request->get('date'));
+            if ($date) {
+                $this->setEntryDate($entry, $date);
             }
 
             $entry->data($data);
@@ -240,6 +232,10 @@ class GuestEntryController extends Controller
                         ->reject(function ($value, $fieldHandle) {
                             return $fieldHandle === 'type';
                         })
+                        ->filter(function ($value, $fieldHandle) use ($setFields) {
+                            return in_array($fieldHandle, ['id', 'enabled'])
+                                || $setFields->get($fieldHandle)?->visibility() === 'visible';
+                        })
                         ->map(function ($value, $fieldHandle) use ($entry, $replicatorField, $index, $setFields, $request) {
                             $field = $setFields->get($fieldHandle);
 
@@ -261,6 +257,10 @@ class GuestEntryController extends Controller
             return collect($value)
                 ->map(function ($rowValue, $index) use ($entry, $gridField, $request) {
                     return collect($rowValue)
+                        ->filter(function ($value, $fieldHandle) use ($gridField) {
+                            return $fieldHandle === 'id'
+                                || $gridField->fieldtype()->fields()->get($fieldHandle)?->visibility() === 'visible';
+                        })
                         ->map(function ($value, $fieldHandle) use ($entry, $gridField, $request, $index) {
                             $field = $gridField->fieldtype()->fields()->get($fieldHandle);
 
@@ -388,7 +388,7 @@ class GuestEntryController extends Controller
                 ! is_null($field->get('folder')) => $field->get('folder'),
                 $field->get('dynamic') === 'id' => $entry->id(),
                 $field->get('dynamic') === 'slug' => Str::slug($entry->slug() ?? $request->get('slug') ?? $request->get('title'), '-', $entry->site()->lang()),
-                $field->get('dynamic') === 'author' => $this->authorFolder($entry, $request),
+                $field->get('dynamic') === 'author' => $this->authorFolder($entry),
                 default => '',
             };
 
@@ -436,15 +436,9 @@ class GuestEntryController extends Controller
             || $file->getMimeType() === 'image/svg+xml';
     }
 
-    private function authorFolder(EntryContract $entry, Request $request): ?string
+    private function authorFolder(EntryContract $entry): ?string
     {
-        $author = SupportCollection::wrap($entry->author ?? $request->get('author'))->first();
-
-        if (is_object($author)) {
-            return $author->id();
-        }
-
-        return User::find($author)?->id();
+        return User::find($entry->authors()->first())?->id();
     }
 
     private function existingFiles(EntryContract $entry, string $key, Field $field, AssetContainerContract $assetContainer, Request $request): array
@@ -505,7 +499,7 @@ class GuestEntryController extends Controller
         return SiteFacade::current();
     }
 
-    protected function withSuccess(Request $request, array $data = [])
+    protected function withSuccess(FormRequest $request, array $data = [])
     {
         if ($request->wantsJson()) {
             $data = array_merge($data, [
@@ -518,8 +512,8 @@ class GuestEntryController extends Controller
 
         $request->session()->flash('guest-entries.success', true);
 
-        return $request->_redirect ?
-            redirect($request->_redirect)->with($data)
+        return $request->redirectUrl()
+            ? redirect($request->redirectUrl())->with($data)
             : back()->with($data);
     }
 }

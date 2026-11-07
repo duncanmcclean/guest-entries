@@ -11,11 +11,20 @@ trait ResolvesEntry
 
     public function entry(): EntryContract
     {
-        return $this->entry ??= Entry::find($this->get('_id')) ?? abort(404);
+        return $this->entry ??= $this->findEntry();
     }
 
-    public function entryBelongsToCollection(): bool
+    private function findEntry(): EntryContract
     {
-        return $this->entry()->collectionHandle() === $this->get('_collection');
+        $entry = Entry::find($this->route('id'));
+
+        abort_unless($entry?->collectionHandle() === $this->form()->collection()->handle(), 404);
+
+        return $entry;
+    }
+
+    protected function failedAuthorization()
+    {
+        abort(404);
     }
 }

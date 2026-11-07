@@ -2,9 +2,8 @@
 
 namespace DuncanMcClean\GuestEntries\Tags;
 
-use Illuminate\Container\EntryNotFoundException;
-use Statamic\Exceptions\CollectionNotFoundException;
-use Statamic\Facades\Collection;
+use DuncanMcClean\GuestEntries\Form;
+use Statamic\Contracts\Entries\Entry as EntryContract;
 use Statamic\Facades\Entry;
 use Statamic\Tags\Tags;
 
@@ -16,74 +15,81 @@ class GuestEntriesTag extends Tags
 
     public function create()
     {
-        $collectionHandle = $this->params->get('collection');
-
-        if (! $collectionHandle) {
-            throw new \Exception('Guest Entries: The `collection` parameter is required when creating an entry.');
-        }
-
-        if (! Collection::handleExists($collectionHandle)) {
-            throw new CollectionNotFoundException($collectionHandle);
-        }
+        $form = $this->resolveForm('create');
 
         return $this->createForm(
-            route('statamic.guest-entries.store')
+            route('statamic.guest-entries.store', $form->handle())
         );
     }
 
     public function update()
     {
-        $entryId = $this->params->get('id');
-        $collectionHandle = $this->params->get('collection');
+        $form = $this->resolveForm('update');
+        $entry = $this->resolveEntry($form);
 
-        if (! $collectionHandle) {
-            throw new \Exception('Guest Entries: The `collection` parameter is required when updating an entry.');
-        }
-
-        if (! $entryId) {
-            throw new \Exception('Guest Entries: The `id` parameter is required when updating an entry.');
-        }
-
-        if (! Collection::handleExists($collectionHandle)) {
-            throw new CollectionNotFoundException($collectionHandle);
-        }
-
-        if (! Entry::find($entryId)) {
-            throw new EntryNotFoundException;
+        if (! $entry || ! $form->authorize($entry)) {
+            return null;
         }
 
         return $this->createForm(
-            route('statamic.guest-entries.update'),
-            Entry::find($entryId)->data()->toArray()
+            route('statamic.guest-entries.update', [$form->handle(), $entry->id()]),
+            $entry->data()->toArray(),
+            'PATCH'
         );
     }
 
     public function delete()
     {
-        $entryId = $this->params->get('id');
-        $collectionHandle = $this->params->get('collection');
+        $form = $this->resolveForm('delete');
+        $entry = $this->resolveEntry($form);
 
-        if (! $collectionHandle) {
-            throw new \Exception('Guest Entries: The `collection` parameter is required when deleting an entry.');
-        }
-
-        if (! $entryId) {
-            throw new \Exception('Guest Entries: The `id` parameter is required when deleting an entry.');
-        }
-
-        if (! Collection::handleExists($collectionHandle)) {
-            throw new CollectionNotFoundException($collectionHandle);
-        }
-
-        if (! Entry::find($entryId)) {
-            throw new EntryNotFoundException;
+        if (! $entry || ! $form->authorize($entry)) {
+            return null;
         }
 
         return $this->createForm(
-            route('statamic.guest-entries.destroy'),
-            Entry::find($entryId)->data()->toArray(),
+            route('statamic.guest-entries.destroy', [$form->handle(), $entry->id()]),
+            $entry->data()->toArray(),
             'DELETE'
         );
+    }
+
+    private function resolveForm(string $action): Form
+    {
+        if ($this->params->hasAny(['collection', 'request'])) {
+            throw new \Exception('Guest Entries: The `collection` and `request` parameters have been moved to the form in `config/guest-entries.php`.');
+        }
+
+        if (! $handle = $this->params->get('form')) {
+            throw new \Exception("Guest Entries: The `form` parameter is required when using the `{$action}` tag.");
+        }
+
+        if (! $form = Form::find($handle)) {
+            throw new \Exception("Guest Entries: The [{$handle}] form hasn't been configured.");
+        }
+
+        if ($form->action() !== $action) {
+            throw new \Exception("Guest Entries: The [{$handle}] form can't be used with the `{$action}` tag.");
+        }
+
+        $form->collection();
+
+        if ($action !== 'delete') {
+            $form->fields();
+        }
+
+        return $form;
+    }
+
+    private function resolveEntry(Form $form): ?EntryContract
+    {
+        if (! $id = $this->params->get('id')) {
+            throw new \Exception("Guest Entries: The `id` parameter is required when using the `{$form->action()}` tag.");
+        }
+
+        $entry = Entry::find($id);
+
+        return $entry?->collectionHandle() === $form->collection()->handle() ? $entry : null;
     }
 
     public function errors()
