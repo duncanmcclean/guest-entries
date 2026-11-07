@@ -12,7 +12,7 @@
 
 Guest Entries allows your users to create, update & delete entries from the front-end of your site. Essentially [Workshop](https://statamic.com/addons/statamic/workshop) from the v2 days.
 
-[Read the docs](https://guest-entries.duncanmcclean.com).
+[Read the docs](https://statamic.com/addons/duncanmcclean/guest-entries/docs).
 
 ## Features
 
