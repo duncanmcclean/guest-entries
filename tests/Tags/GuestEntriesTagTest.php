@@ -4,6 +4,8 @@ use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
 use Statamic\Facades\Collection;
@@ -626,6 +628,16 @@ it('returns delete guest entry form with redirect and error_redirect hidden inpu
     assertStringContainsString('<input type="hidden" name="_token"', $usage);
     assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
+});
+
+it('escapes errors', function () use (&$tag) {
+    session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
+        'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',
+    ])));
+
+    expect($tag->errors())->toBe([
+        ['value' => 'The selected blocks.&lt;img src=x onerror=alert(1)&gt;.type is invalid.'],
+    ]);
 });
 
 it('can fetch delete guest entry form data', function () {

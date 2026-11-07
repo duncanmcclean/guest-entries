@@ -72,7 +72,7 @@ trait FormBuilder
         $errors = [];
 
         foreach (session('errors')->getBag('guest-entries')->all() as $error) {
-            $errors[]['value'] = $error;
+            $errors[]['value'] = e($error);
         }
 
         return ($this->content === '')    // If this is a single tag...
