@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Statamic\Facades\Site;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class EnsureFormParametersArriveIntact
 {
@@ -19,68 +18,57 @@ class EnsureFormParametersArriveIntact
      * @param  Request  $request
      * @return Response
      *
-     * @throws AccessDeniedHttpException
+     * @throws InvalidFormParametersException
      */
     public function handle($request, Closure $next)
     {
-        // In a test environment, we don't want to worry about having to pass in form
-        // parameters. So, before this test, we'll set some fallbacks for the params
-        // if they're not set in the request.
-        if (app()->environment('testing')) {
-            $request->merge([
-                '_redirect' => $request->has('_redirect')
-                    ? $request->get('_redirect')
-                    : encrypt($request->header('referer') ?? '/'),
-                '_error_redirect' => $request->has('_error_redirect')
-                    ? $request->get('_error_redirect')
-                    : encrypt($request->header('referer') ?? '/'),
-                '_request' => $request->has('_request')
-                    ? $request->get('_request')
-                    : encrypt('Empty'),
-                '_collection' => $request->has('_collection')
-                    ? $request->get('_collection')
-                    : encrypt('Empty'),
-                '_id' => $request->has('_id')
-                    ? $request->get('_id')
-                    : encrypt('Empty'),
-            ]);
-        }
+        $params = config('guest-entries.disable_form_parameter_validation')
+            ? $this->unencryptedParams($request)
+            : $this->encryptedParams($request);
 
-        // If the validation of form parameters is disabled, we want to take the
-        // user's input and encrypt it, so it can be used later in this middleware.
-        if (config('guest-entries.disable_form_parameter_validation')) {
-            $request->merge([
-                '_request' => encrypt($request->get('_request') ?? $request->header('referer') ?? '/'),
-                '_error_redirect' => encrypt($this->internalUrl($request->get('_error_redirect'), $request) ?? $request->header('referer') ?? '/'),
-                '_redirect' => encrypt($this->internalUrl($request->get('_redirect'), $request) ?? 'Empty'),
-                '_collection' => encrypt($request->get('_collection') ?? 'Empty'),
-                '_id' => encrypt($request->get('_id') ?? 'Empty'),
-            ]);
+        $params = collect(['collection', 'id', 'redirect', 'error_redirect', 'request'])
+            ->mapWithKeys(fn (string $key) => ["_{$key}" => $params[$key] ?? null])
+            ->map(fn ($value) => $value === 'Empty' ? null : $value);
+
+        // The query string takes priority over the request body in $request->get(),
+        // so we need to remove any parameters smuggled in through the query string.
+        $params->keys()->each(fn (string $key) => $request->query->remove($key));
+
+        $request->merge($params->all());
+
+        return $next($request);
+    }
+
+    private function encryptedParams(Request $request): array
+    {
+        $payload = $request->input('_params');
+
+        if (! is_string($payload)) {
+            throw new InvalidFormParametersException;
         }
 
         try {
-            $redirectParam = decrypt($request->get('_redirect'));
-            $errorRedirectParam = decrypt($request->get('_error_redirect'));
-            $requestParam = decrypt($request->get('_request'));
-            $collectionParam = decrypt($request->get('_collection'));
-            $idParam = decrypt($request->get('_id'));
-        } catch (DecryptException $e) {
+            $params = decrypt($payload);
+        } catch (DecryptException) {
             throw new InvalidFormParametersException;
         }
 
-        if (! $redirectParam || ! $errorRedirectParam || ! $requestParam) {
+        if (! is_array($params) || ($params['action'] ?? null) !== $request->route()->getActionMethod()) {
             throw new InvalidFormParametersException;
         }
 
-        $request->merge([
-            '_redirect' => $redirectParam === 'Empty' ? null : $redirectParam,
-            '_error_redirect' => $errorRedirectParam === 'Empty' ? null : $errorRedirectParam,
-            '_request' => $requestParam === 'Empty' ? null : $requestParam,
-            '_collection' => $collectionParam === 'Empty' ? null : $collectionParam,
-            '_id' => $idParam === 'Empty' ? null : $idParam,
-        ]);
+        return $params;
+    }
 
-        return $next($request);
+    private function unencryptedParams(Request $request): array
+    {
+        return [
+            'collection' => $request->input('_collection'),
+            'id' => $request->input('_id'),
+            'redirect' => $this->internalUrl($request->input('_redirect'), $request),
+            'error_redirect' => $this->internalUrl($request->input('_error_redirect'), $request) ?? $request->header('referer') ?? '/',
+            'request' => $request->input('_request'),
+        ];
     }
 
     private function internalUrl(mixed $url, Request $request): ?string

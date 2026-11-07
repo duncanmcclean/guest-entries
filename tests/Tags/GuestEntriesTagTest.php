@@ -104,6 +104,36 @@ it('returns create guest entry form with redirect and error_redirect hidden inpu
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
 });
 
+it('returns create guest entry form with form parameters in a single encrypted input', function () use (&$tag) {
+    Config::set('guest-entries.disable_form_parameter_validation', false);
+
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'redirect' => '/thank-you',
+        'request' => 'GuestbookRequest',
+    ]);
+
+    $usage = $tag->create();
+
+    preg_match('/<input type="hidden" name="_params" value="([^"]+)"/', $usage, $matches);
+
+    expect(decrypt(html_entity_decode($matches[1])))->toBe([
+        'action' => 'store',
+        'collection' => 'guestbook',
+        'id' => null,
+        'redirect' => '/thank-you',
+        'error_redirect' => null,
+        'request' => 'GuestbookRequest',
+    ]);
+
+    expect($usage)
+        ->not->toContain('name="_collection"')
+        ->not->toContain('name="_redirect"')
+        ->not->toContain('name="_request"');
+});
+
 it('returns create guest entry form with escaped hidden inputs', function () use (&$tag) {
     Collection::make('guestbook')->save();
 

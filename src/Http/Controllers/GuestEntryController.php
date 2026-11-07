@@ -42,7 +42,7 @@ use TypeError;
 
 class GuestEntryController extends Controller
 {
-    protected $ignoredParameters = ['_token', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
+    protected $ignoredParameters = ['_token', '_params', '_collection', '_id', '_redirect', '_error_redirect', '_request', 'slug', 'published'];
 
     protected $reservedParameters = ['id', 'origin', 'blueprint', 'template', 'layout', 'redirect', 'protect', 'author', 'order', 'updated_by', 'updated_at'];
 
