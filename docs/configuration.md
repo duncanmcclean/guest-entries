@@ -60,6 +60,8 @@ You may also configure this addon's [Honeypot](#honeypot) feature. `false` will 
 
 ### Form Parameter Validation
 
-Guest Entries will automatically encrypt the values of hidden form parameters, like `_redirect` and `_collection` when using the `{{ guest-entry }}` tag. The values are later decrypted by a middleware when the form is submitted.
+When using the `{{ guest-entries }}` tags, Guest Entries will automatically encrypt the form's parameters, like `collection`, `id`, `redirect` and `request`, into a single `_params` hidden input. The values are later decrypted by a middleware when the form is submitted.
 
-This measure aims to prevent users from tampering with the form parameters. However, if you wish to disable this functionality, set `disable_form_parameter_validation` to `true`.
+This measure prevents users from tampering with the form parameters, or swapping them with the parameters from another form. However, if you wish to disable this functionality, set `disable_form_parameter_validation` to `true`.
+
+> **Warning:** When form parameter validation is disabled, users can submit any collection, entry ID and form request they like. This means anyone can update or delete *any* entry in your whitelisted collections, and skip your form request's validation & authorization.

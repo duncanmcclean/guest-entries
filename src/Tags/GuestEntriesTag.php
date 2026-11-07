@@ -26,9 +26,7 @@ class GuestEntriesTag extends Tags
             throw new CollectionNotFoundException($collectionHandle);
         }
 
-        return $this->createForm(
-            route('statamic.guest-entries.store')
-        );
+        return $this->createForm('store');
     }
 
     public function update()
@@ -52,10 +50,7 @@ class GuestEntriesTag extends Tags
             throw new EntryNotFoundException;
         }
 
-        return $this->createForm(
-            route('statamic.guest-entries.update'),
-            Entry::find($entryId)->data()->toArray()
-        );
+        return $this->createForm('update', Entry::find($entryId)->data()->toArray());
     }
 
     public function delete()
@@ -79,11 +74,7 @@ class GuestEntriesTag extends Tags
             throw new EntryNotFoundException;
         }
 
-        return $this->createForm(
-            route('statamic.guest-entries.destroy'),
-            Entry::find($entryId)->data()->toArray(),
-            'DELETE'
-        );
+        return $this->createForm('destroy', Entry::find($entryId)->data()->toArray(), 'DELETE');
     }
 
     public function errors()
@@ -95,7 +86,7 @@ class GuestEntriesTag extends Tags
         $errors = [];
 
         foreach (session('errors')->getBag('default')->all() as $error) {
-            $errors[]['value'] = $error;
+            $errors[]['value'] = e($error);
         }
 
         return $errors;

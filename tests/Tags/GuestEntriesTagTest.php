@@ -3,6 +3,8 @@
 use DuncanMcClean\GuestEntries\Tags\GuestEntriesTag;
 use Illuminate\Container\EntryNotFoundException;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Statamic\Exceptions\CollectionNotFoundException;
 use Statamic\Facades\Antlers;
 use Statamic\Facades\Collection;
@@ -102,6 +104,36 @@ it('returns create guest entry form with redirect and error_redirect hidden inpu
     assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $usage);
     assertStringContainsString('<input type="hidden" name="_redirect" value="/thank-you"', $usage);
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
+});
+
+it('returns create guest entry form with form parameters in a single encrypted input', function () use (&$tag) {
+    Config::set('guest-entries.disable_form_parameter_validation', false);
+
+    Collection::make('guestbook')->save();
+
+    $tag->setParameters([
+        'collection' => 'guestbook',
+        'redirect' => '/thank-you',
+        'request' => 'GuestbookRequest',
+    ]);
+
+    $usage = $tag->create();
+
+    preg_match('/<input type="hidden" name="_params" value="([^"]+)"/', $usage, $matches);
+
+    expect(decrypt(html_entity_decode($matches[1])))->toBe([
+        'action' => 'store',
+        'collection' => 'guestbook',
+        'id' => null,
+        'redirect' => '/thank-you',
+        'error_redirect' => null,
+        'request' => 'GuestbookRequest',
+    ]);
+
+    expect($usage)
+        ->not->toContain('name="_collection"')
+        ->not->toContain('name="_redirect"')
+        ->not->toContain('name="_request"');
 });
 
 it('returns create guest entry form with escaped hidden inputs', function () use (&$tag) {
@@ -553,4 +585,14 @@ it('can fetch delete guest entry form data', function () {
     assertStringContainsString('<input type="hidden" name="_collection" value="guestbook"', $form['params_html']);
     assertStringContainsString('<input type="hidden" name="_id" value="hello"', $form['params_html']);
     assertStringContainsString('Hello World', $form['title']);
+});
+
+it('escapes errors', function () use (&$tag) {
+    session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
+        'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',
+    ])));
+
+    expect($tag->errors())->toBe([
+        ['value' => 'The selected blocks.&lt;img src=x onerror=alert(1)&gt;.type is invalid.'],
+    ]);
 });
