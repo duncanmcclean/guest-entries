@@ -9,7 +9,8 @@ class DestroyRequest extends FormRequest
     use Concerns\AcceptsFormRequests,
         Concerns\HandlesRedirects,
         Concerns\ResolvesEntry,
-        Concerns\ResolvesForm;
+        Concerns\ResolvesForm,
+        Concerns\ValidatesTurnstile;
 
     private string $action = 'delete';
 
@@ -21,7 +22,7 @@ class DestroyRequest extends FormRequest
 
     public function rules()
     {
-        return $this->formRequest()?->rules() ?? [];
+        return [...($this->formRequest()?->rules() ?? []), ...$this->turnstileRules()];
     }
 
     public function messages()

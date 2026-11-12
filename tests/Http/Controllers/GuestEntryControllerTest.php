@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Spatie\TestTime\TestTime;
 use Statamic\Events\EntrySaved;
@@ -808,6 +809,87 @@ it('can store entry and ensure honeypot works if value is not empty', function (
     $entry = Entry::all()->last();
 
     $this->assertNull($entry);
+});
+
+it('can store entry when turnstile verification passes', function () {
+    Config::set('guest-entries.turnstile.secret_key', 'turnstile-secret');
+    Config::set('guest-entries.forms.create_comments.turnstile', true);
+
+    Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => true])]);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store', 'create_comments'), [
+            'title' => 'This is great',
+            'cf-turnstile-response' => 'turnstile-token',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    $this->assertSame('This is great', Entry::all()->last()->get('title'));
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        && $request['secret'] === 'turnstile-secret'
+        && $request['response'] === 'turnstile-token');
+});
+
+it('cant store entry when turnstile verification fails', function (array $turnstileInput) {
+    Config::set('guest-entries.turnstile.secret_key', 'turnstile-secret');
+    Config::set('guest-entries.forms.create_comments.turnstile', true);
+
+    Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => false, 'error-codes' => ['invalid-input-response']])]);
+
+    Collection::make('comments')->save();
+
+    $this
+        ->post(route('statamic.guest-entries.store', 'create_comments'), [
+            'title' => 'This is great',
+            ...$turnstileInput,
+        ])
+        ->assertSessionHasErrors('cf-turnstile-response');
+
+    $this->assertNull(Entry::all()->last());
+})->with([
+    'invalid token' => [['cf-turnstile-response' => 'turnstile-token']],
+    'missing token' => [[]],
+]);
+
+it('cant update entry when turnstile verification fails', function () {
+    Config::set('guest-entries.turnstile.secret_key', 'turnstile-secret');
+    Config::set('guest-entries.forms.update_albums.turnstile', true);
+
+    Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => false])]);
+
+    Collection::make('albums')->save();
+    Entry::make()->id('allo-mate-idee')->collection('albums')->slug('allo-mate')->data(['title' => 'Allo Mate!'])->save();
+
+    $this
+        ->patch(route('statamic.guest-entries.update', ['update_albums', 'allo-mate-idee']), [
+            'title' => 'Allo Mate! (Remastered)',
+            'cf-turnstile-response' => 'turnstile-token',
+        ])
+        ->assertSessionHasErrors('cf-turnstile-response');
+
+    $this->assertSame('Allo Mate!', Entry::find('allo-mate-idee')->get('title'));
+});
+
+it('cant delete entry when turnstile verification fails', function () {
+    Config::set('guest-entries.turnstile.secret_key', 'turnstile-secret');
+    Config::set('guest-entries.forms.delete_albums.turnstile', true);
+
+    Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => false])]);
+
+    Collection::make('albums')->save();
+    Entry::make()->id('allo-mate-idee')->collection('albums')->slug('allo-mate')->data(['title' => 'Allo Mate!'])->save();
+
+    $this
+        ->delete(route('statamic.guest-entries.destroy', ['delete_albums', 'allo-mate-idee']), [
+            'cf-turnstile-response' => 'turnstile-token',
+        ])
+        ->assertSessionHasErrors('cf-turnstile-response');
+
+    $this->assertNotNull(Entry::find('allo-mate-idee'));
 });
 
 it('can store entry and ensure entry is unpublished by default', function () {

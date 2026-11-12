@@ -54,6 +54,22 @@ return [
 
     'honeypot' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Turnstile
+    |--------------------------------------------------------------------------
+    |
+    | To protect your forms with Cloudflare Turnstile, add your site and
+    | secret keys here, then enable `turnstile` on the forms you'd like
+    | to protect.
+    |
+    */
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];
 ```
 
@@ -72,6 +88,7 @@ Since a form's settings live on the server, rather than in hidden inputs, they c
         'published' => false,
         'auth' => true,
         'request' => \App\Http\Requests\SubmitArticleRequest::class,
+        'turnstile' => true,
         'fields' => ['title', 'content'],
     ],
 
@@ -142,6 +159,10 @@ Gate::define('delete-article', function (?User $user, Entry $entry) {
 **`request`**
 
 A Laravel Form Request used to validate (and authorize) submissions. Guest Entries doesn't apply the validation rules from your blueprint - those are for the Control Panel. Any validation you'd like on the front-end, like required fields, allowed options or the number of files, should live in a Form Request. You can pass in simply the name of the class or the FQNS (fully qualified namespace) - eg. `ArticleStoreRequest` vs `App\Http\Requests\ArticleStoreRequest`.
+
+**`turnstile`**
+
+When `true`, submissions must pass a [Cloudflare Turnstile](#turnstile) challenge.
 
 ### Enabling the Honeypot
 
@@ -376,6 +397,51 @@ Once you've enabled the Honeypot, ensure to add the field to your forms, like so
     <button type="submit">Create</button>
 {{ /guest-entries:create }}
 ```
+
+## Turnstile
+
+Guest Entries can protect your forms with [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/), a CAPTCHA alternative.
+
+1. Create a Turnstile widget in the Cloudflare dashboard, and add its keys to your `.env` file:
+
+    ```
+    TURNSTILE_SITE_KEY=your-site-key
+    TURNSTILE_SECRET_KEY=your-secret-key
+    ```
+
+2. Enable `turnstile` on the forms you'd like to protect, in `config/guest-entries.php`:
+
+    ```php
+    'submit_article' => [
+        'action' => 'create',
+        'collection' => 'articles',
+        'fields' => ['title', 'content'],
+        'turnstile' => true,
+    ],
+    ```
+
+3. Add the `{{ guest-entries:turnstile }}` tag to your form:
+
+    ```antlers
+    {{ guest-entries:create form="submit_article" }}
+        <input type="text" name="title">
+        <textarea name="content"></textarea>
+
+        {{ guest-entries:turnstile }}
+
+        <button type="submit">Create</button>
+    {{ /guest-entries:create }}
+    ```
+
+Any parameters you pass to the tag are added to the widget as `data-*` attributes, so you can [configure it](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/widget-configurations/):
+
+```antlers
+{{ guest-entries:turnstile theme="dark" size="compact" }}
+```
+
+When a submission fails the challenge, it'll be rejected with a validation error on the `cf-turnstile-response` input, which you can display with [`{{ guest-entries:errors }}`](#errors).
+
+If you're submitting forms with JavaScript, make sure the `cf-turnstile-response` input added by the widget is included in the request.
 
 ## Events
 
