@@ -1,5 +1,15 @@
 # Changelog
 
+## v6.1.0 (2026-11-12)
+
+### What's new
+- Cloudflare Turnstile support #140 by @duncanmcclean
+
+### What's fixed
+- Bump the github-actions group with 4 updates #139 by @dependabot
+
+
+
 ## v6.0.0 (2026-11-07)
 
 ### What's new
