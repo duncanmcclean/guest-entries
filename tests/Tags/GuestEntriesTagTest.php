@@ -630,6 +630,21 @@ it('returns delete guest entry form with redirect and error_redirect hidden inpu
     assertStringContainsString('<input type="hidden" name="_error_redirect" value="/error"', $usage);
 });
 
+it('returns turnstile widget', function () use (&$tag) {
+    Config::set('guest-entries.turnstile.site_key', 'turnstile-site-key');
+
+    $tag->setParameters(['theme' => 'dark']);
+
+    expect($tag->turnstile())->toBe(
+        '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+        .'<div class="cf-turnstile" data-sitekey="turnstile-site-key" data-theme="dark"></div>'
+    );
+});
+
+it('throws an exception when attempting to return turnstile widget without a site key', function () use (&$tag) {
+    $tag->turnstile();
+})->throws(Exception::class, 'Please set the `turnstile.site_key` config option');
+
 it('escapes errors', function () use (&$tag) {
     session()->put('errors', (new ViewErrorBag)->put('default', new MessageBag([
         'blocks' => 'The selected blocks.<img src=x onerror=alert(1)>.type is invalid.',

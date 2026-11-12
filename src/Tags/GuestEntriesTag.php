@@ -92,6 +92,19 @@ class GuestEntriesTag extends Tags
         return $entry?->collectionHandle() === $form->collection()->handle() ? $entry : null;
     }
 
+    public function turnstile(): string
+    {
+        $siteKey = config('guest-entries.turnstile.site_key')
+            ?? throw new \Exception('Guest Entries: Please set the `turnstile.site_key` config option before using the `turnstile` tag.');
+
+        $attributes = collect(['class' => 'cf-turnstile', 'data-sitekey' => $siteKey])
+            ->merge($this->params->mapWithKeys(fn ($value, $param) => ["data-{$param}" => $value]))
+            ->all();
+
+        return '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'
+            .'<div '.$this->renderAttributes($attributes).'></div>';
+    }
+
     public function errors()
     {
         if (! $this->hasErrors()) {

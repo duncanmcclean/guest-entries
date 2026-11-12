@@ -59,6 +59,11 @@ class Form
         return $this->config['request'] ?? null;
     }
 
+    public function turnstile(): bool
+    {
+        return $this->config['turnstile'] ?? false;
+    }
+
     public function fields(): array
     {
         return $this->config['fields'] ?? throw new \Exception("Guest Entries: The [{$this->handle}] form is missing `fields`.");

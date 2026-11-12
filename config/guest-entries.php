@@ -43,4 +43,20 @@ return [
 
     'honeypot' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Turnstile
+    |--------------------------------------------------------------------------
+    |
+    | To protect your forms with Cloudflare Turnstile, add your site and
+    | secret keys here, then enable `turnstile` on the forms you'd like
+    | to protect.
+    |
+    */
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];

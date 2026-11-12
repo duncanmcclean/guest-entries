@@ -9,7 +9,8 @@ class UpdateRequest extends FormRequest
     use Concerns\AcceptsFormRequests,
         Concerns\HandlesRedirects,
         Concerns\ResolvesEntry,
-        Concerns\ResolvesForm;
+        Concerns\ResolvesForm,
+        Concerns\ValidatesTurnstile;
 
     private string $action = 'update';
 
@@ -21,7 +22,7 @@ class UpdateRequest extends FormRequest
 
     public function rules()
     {
-        return $this->formRequest()?->rules() ?? [];
+        return [...($this->formRequest()?->rules() ?? []), ...$this->turnstileRules()];
     }
 
     public function messages()

@@ -8,7 +8,8 @@ class StoreRequest extends FormRequest
 {
     use Concerns\AcceptsFormRequests,
         Concerns\HandlesRedirects,
-        Concerns\ResolvesForm;
+        Concerns\ResolvesForm,
+        Concerns\ValidatesTurnstile;
 
     private string $action = 'create';
 
@@ -21,7 +22,7 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         if ($formRequest = $this->formRequest()) {
-            return $formRequest->rules();
+            return [...$formRequest->rules(), ...$this->turnstileRules()];
         }
 
         return [
@@ -30,6 +31,7 @@ class StoreRequest extends FormRequest
                     ? null
                     : 'required_without:title',
             ],
+            ...$this->turnstileRules(),
         ];
     }
 
